@@ -28,10 +28,12 @@ class Keithley():
         self.keithley.close()
     
     def read_values(self):
-        values = self.keithley.query_ascii_values(':READ?')
-        self.voltage = values[0]
-        self.current = values[1]
-        self.resistance = values[2]
+        # values = self.keithley.query_ascii_values(':READ?')
+        values = self.keithley.ask(':READ?')
+        values = values.split(',').strip()
+        self.voltage = float(values[0])
+        self.current = float(values[1])
+        self.resistance = float(values[2])
     
     def read_voltage(self):
         self.read_values()    
