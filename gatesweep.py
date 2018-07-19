@@ -1,13 +1,15 @@
 # __author__ = Yannic Falke
 
-from keithley_class import *
+from device_classes import *
+from measurement_class import Measurement
 
 
-class Gatesweep():
+class Gatesweep(Measurement):
     def __init__(self):
         self.gate = Gate(2)
         self.meter = Meter(1)
         self.lakeshore = Lakeshore()
+        self.ask_savename()
         savestring = \
         '# gatevoltage(V), temp(K), voltage(V), current(A), R_4pt(W), I_gate(A)'
         self.create_savefile(savestring)
@@ -84,54 +86,11 @@ class Gatesweep():
         else:
             return True
 
-    def finish_measurement(self):
-        ''' Close all Keithleys or Lakeshore devices, close savefile '''
-        print("Finished measurement successfully. Closing all devices\
-        and savefile.")
-        # keithley2.write(':SOUR:CURR:LEV 0.00000')  #Set current source to 0 uA
-        # keithley1.write(':SOUR:VOLT:LEV 0.00000')
-        self.savefile.close()
-        for i in Keithley.instances:
-            i.close()
-        self.lakeshore.close()
-        print('Successfully closed everything. Exiting...')
-        sys.exit()
-
-    def create_savefile(self,savestring):
-        ''' Creates savefile based savestring '''
-        savefolder = str(input('Input name of DIRECTORY: ') or 'testfolder') 
-        savename = str(input('Input name of FILENAME: ') or 'testfile')
-        if not savename[-4] == '.':
-            savename += ".dat"
-        if not os.path.exists(savefolder):
-            os.makedirs(savefolder)
-        os.chdir(savefolder)
-        if os.path.isfile(savename):
-            choice = str(input("File already exists. Do you want to rename? [y/n] ")\
-            or "n")
-            if choice == 'y':
-                savename = input("New filename: ")
-                if not "." in savename:
-                    savename += ".dat"
-            if choice == 'n':
-                i = 1
-                save_tmp = savename.split('.')[0]
-                while os.path.isfile(save_tmp + "_{}.dat".format(i)):
-                    i += 1
-                savename = save_tmp + "_{}.dat".format(i)
-        print("savename is: {}".format(savename))
-        thefile = open(savename, "w")
-        thefile.write(savestring + "\n")
-        self.savefile = thefile
-        
-
     def ask_parameters(self):
         ''' Define measurement range based on CLI user input '''
         self.maxvoltage = float(input('Set MAXvoltage (standard is 40, if not defined): ') or 40)
         self.minvoltage = float(input('Set MINvoltage (standard is -40, if not defined): ') or -40)
         self.stepsize = float(input('Set stepsize (standard is 0.5, if not defined): ') or 0.5)
-
-
 
     def start_gatesweep(self):
         # benchslope = False
@@ -140,14 +99,14 @@ class Gatesweep():
         r = []
         fig = plt.figure()
         plt.xlabel("Gatevoltage [V]")
-        plt.ylabel("Current / Resistance")
+        plt.ylabel("Resistance [Ohm]")
         while 1:
             # Set gatevoltage and measure values
             print('Gatevoltage = {}'.format(self.gatevoltage))
-            self.gate.set_gatevoltage(self.gatevoltage)  #Set voltage 
+            self.gate.set_gatevoltage(self.gatevoltage)  
             time.sleep(0.1)
-            meterV = self.meter.read_voltage()      #first measurement is voltage
-            meterI = self.meter.read_current()     #second measurement is current
+            meterV = self.meter.read_voltage() 
+            meterI = self.meter.read_current() 
             temp=self.lakeshore.read_temp()
 
             # Plot values in real time
@@ -155,8 +114,8 @@ class Gatesweep():
             x.append(self.gatevoltage)
             y.append(meterI)
             r.append(meterV/meterI)
-            plt.plot(x, y, 'k.',label='Current')
-            plt.plot(x, r, 'r.',label='Resistance')
+            # plt.plot(x, y, 'k.')
+            plt.plot(x, r, 'k.')
             plt.legend()
             plt.draw()
             plt.pause(0.01)
