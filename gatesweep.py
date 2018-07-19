@@ -6,8 +6,8 @@ from measurement_class import Measurement
 
 class Gatesweep(Measurement):
     def __init__(self):
-        self.gate = Gate(2)
-        self.meter = Meter(1)
+        self.gate = Gate(1)
+        self.meter = Meter(2)
         self.lakeshore = Lakeshore()
         self.ask_savename()
         savestring = \
@@ -112,10 +112,10 @@ class Gatesweep(Measurement):
             # Plot values in real time
             time.sleep(0.1)
             x.append(self.gatevoltage)
-            y.append(meterI)
+            y.append(meterV)
             r.append(meterV/meterI)
-            # plt.plot(x, y, 'k.')
-            plt.plot(x, r, 'k.')
+            plt.plot(x, y, 'k.')
+            # plt.plot(x, r, 'k.')
             plt.legend()
             plt.draw()
             plt.pause(0.01)
