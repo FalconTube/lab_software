@@ -19,7 +19,8 @@ class Gatesweep(Measurement):
             self.start_gatesweep()            
         except KeyboardInterrupt:
             self.finish_measurement()
-            sys.exit()
+        finally:
+            self.finish_measurement()
 
     def init_ramp_parameters(self):
         ''' Initializes counters, necessary for self.ramp_gatevoltage() '''
@@ -29,9 +30,7 @@ class Gatesweep(Measurement):
         self.maxcounter = 0
 
     def ramp_gatevoltage(self):
-        ''' Increments the gatevoltage and finishes the measurement,
-        when it is over
-        '''
+        ''' Increments the gatevoltage and finishes the measurement '''
         if self.gatevoltage < self.maxvoltage and \
         self.gatevoltage >= self.lastvoltage:
             self.lastvoltage = self.gatevoltage
@@ -116,7 +115,6 @@ class Gatesweep(Measurement):
             r.append(meterV/meterI)
             # plt.plot(x, y, 'k.')
             plt.plot(x, r, 'k.')
-            plt.legend()
             plt.draw()
             plt.pause(0.01)
 
