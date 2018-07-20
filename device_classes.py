@@ -21,6 +21,7 @@ class Keithley():
 
     def _initialize_keithley(self, gpibnum):
         rm = visa.ResourceManager()
+        print("GPIB::{}".format(gpibnum))
         self.keithley = rm.open_resource("GPIB::{}".format(gpibnum))
         print('Initialized Keithley number {}'.format(gpibnum))
     
@@ -30,10 +31,10 @@ class Keithley():
     def read_values(self):
         # values = self.keithley.query_ascii_values(':READ?')
         values = self.keithley.ask(':READ?')
-        values = values.split(',').strip()
-        self.voltage = float(values[0])
-        self.current = float(values[1])
-        self.resistance = float(values[2])
+        values = values.split(',')
+        self.voltage = float(values[0].strip())
+        self.current = float(values[1].strip())
+        self.resistance = float(values[2].strip())
     
     def read_voltage(self):
         self.read_values()    
@@ -48,7 +49,7 @@ class Keithley():
         return self.resistance
 
 class Gate(Keithley):
-    def __init__(self, gpibnum, compliance=0.000010):
+    def __init__(self, gpibnum, compliance=0.0010):
         self.compliance = compliance
         self._initialize_keithley(gpibnum)
         self._initialize_gate()
@@ -57,8 +58,8 @@ class Gate(Keithley):
     def _initialize_gate(self):
         self.gate = self.keithley
         gate_setup = [
-        # '*RST',
-        '*CLS'
+        '*RST',
+        '*CLS',
         ':OUTP OFF',
         ':SOUR:FUNC VOLT',       #Set voltage mode
         ':SOUR:VOLT:MODE FIX',
@@ -90,7 +91,7 @@ class Meter(Keithley):
     def _initialize_meter(self):
         self.meter = self.keithley
         meter_setup = [
-        # '*RST',
+        '*RST',
         '*CLS',
         ':OUTP OFF',
         ':SOUR:FUNC CURR',       #Set current mode
