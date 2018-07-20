@@ -7,8 +7,11 @@ import time
 
 class Quarz(Measurement):
     def __init__(self):
+        self.gate = Gate(1)
+        self.gate.set_gatevoltage(0)
+        self.gate.close()
         self.ask_savename()
-        savestring = '#Time [s], Temperature [K], Resistance [Ohm], Deposit rate [Angstrom/s]'
+        savestring = '# Time [s], Temperature [K], Resistance [Ohm], Deposit rate [Angstrom/s]'
         self.create_savefile(savestring)
         self.meter = Meter(2)
         self.lakeshore = Lakeshore()
@@ -17,8 +20,7 @@ class Quarz(Measurement):
             self.run_measurement()            
         except KeyboardInterrupt:
             self.finish_measurement()
-        # finally:
-        #     self.finish_measurement()
+
 
     def run_measurement(self):
         counter = 0
@@ -34,6 +36,7 @@ class Quarz(Measurement):
             counter += 1
             time_elapsed = time.time() - start_time
             temp =   self.lakeshore.read_temp()
+            temp = str(temp).strip()
             meterV = self.meter.read_voltage()
             meterI = self.meter.read_current()
             resist = meterV/meterI
@@ -48,6 +51,7 @@ class Quarz(Measurement):
             .format(time_elapsed, temp, resist, deposit_rate))
             time.sleep(1)
             # Plot in real time
+
             # ax.plot(x, T, 'k.')
             ax.plot(x, R, 'r.')
             # ax.plot(x, Depot, 'b.')
@@ -59,10 +63,11 @@ class Quarz(Measurement):
             ax1.set_xlabel('Absolute Deposit [A]')
             ax1.set_ylabel('Resistance [Ohm]')
             # plt.xlabel('test, test')
-            ax.set_xlim(time_elapsed-180, time_elapsed)
+            # ax.set_xlim(time_elapsed-180, time_elapsed)
             plt.tight_layout()
             plt.draw()
             plt.pause(0.01)
+
 
 if __name__ == '__main__':
     q = Quarz()

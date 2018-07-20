@@ -11,15 +11,13 @@ class Gatesweep(Measurement):
         self.lakeshore = Lakeshore()
         self.ask_savename()
         savestring = \
-        '# gatevoltage(V), temp(K), voltage(V), current(A), R_4pt(W), I_gate(A)'
+        '# gatevoltage(V), temp(K), voltage(V), current(A), R_4pt(W)'
         self.create_savefile(savestring)
         self.ask_parameters()
         self.init_ramp_parameters()
         try:
             self.start_gatesweep()            
         except KeyboardInterrupt:
-            self.finish_measurement()
-        finally:
             self.finish_measurement()
 
     def init_ramp_parameters(self):
@@ -109,7 +107,7 @@ class Gatesweep(Measurement):
             temp=self.lakeshore.read_temp()
 
             # Plot values in real time
-            time.sleep(0.1)
+            # time.sleep(0.1)
             x.append(self.gatevoltage)
             y.append(meterV)
             r.append(meterV/meterI)
