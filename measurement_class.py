@@ -11,8 +11,6 @@ class Measurement():
         ''' Close all Keithleys or Lakeshore devices, close savefile '''
         print("Finished measurement successfully. Closing all devices\
         and savefile.")
-        # keithley2.write(':SOUR:CURR:LEV 0.00000')  #Set current source to 0 uA
-        # keithley1.write(':SOUR:VOLT:LEV 0.00000')
         self.savefile.close()
         for i in Keithley.instances:
             i.close()
@@ -47,9 +45,9 @@ class Measurement():
         print('Savename is {}'.format(self.savename))
 
     def create_savefile(self, savestring):
-        if not hasattr(self, self.savename):
-            print('Savename is not defined. Please define it now: ')
-            self.ask_savename()
+        # if not hasattr(self, self.savename):
+        #     print('Savename is not defined. Please define it now: ')
+        #     self.ask_savename()
         ''' Creates savefile and generates header '''
         self.savefile = open(self.savename, "w")
         self.savefile.write(savestring + "\n")

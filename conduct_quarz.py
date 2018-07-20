@@ -8,7 +8,6 @@ import time
 class Quarz(Measurement):
     def __init__(self):
         self.ask_savename()
-        self.savename = 't.dat'
         savestring = '#Time [s], Temperature [K], Resistance [Ohm], Deposit rate [Angstrom/s]'
         self.create_savefile(savestring)
         self.meter = Meter(2)
@@ -18,8 +17,8 @@ class Quarz(Measurement):
             self.run_measurement()            
         except KeyboardInterrupt:
             self.finish_measurement()
-        finally:
-            self.finish_measurement()
+        # finally:
+        #     self.finish_measurement()
 
     def run_measurement(self):
         counter = 0
@@ -43,14 +42,16 @@ class Quarz(Measurement):
             T.append(temp)
             R.append(resist)
             Depot.append(deposit_rate)
-            absolute_deposit = np.array(x)*np.array(T)
+            absolute_deposit = np.array(x)*np.array(Depot)
+
             self.savefile.write('{}, {}, {}, {} \n'\
             .format(time_elapsed, temp, resist, deposit_rate))
             time.sleep(1)
             # Plot in real time
-            ax.plot(x, T, 'k.')
+            # ax.plot(x, T, 'k.')
             ax.plot(x, R, 'r.')
-            ax.plot(x, absolute_deposit, 'b.')
+            # ax.plot(x, Depot, 'b.')
+            # ax.plot(x,Depot, 'b.')
             ax.set_xlabel('Time [s]')
             ax.set_ylabel('Values')
 
@@ -58,6 +59,7 @@ class Quarz(Measurement):
             ax1.set_xlabel('Absolute Deposit [A]')
             ax1.set_ylabel('Resistance [Ohm]')
             # plt.xlabel('test, test')
+            ax.set_xlim(time_elapsed-180, time_elapsed)
             plt.tight_layout()
             plt.draw()
             plt.pause(0.01)

@@ -143,8 +143,12 @@ class InficonSQM160(object):
         self.serial.write(command_bytes)
         time.sleep(0.1)
         reply = self.serial.read(self.serial.inWaiting())
-        rate = reply[3:-2].decode("utf-8")
-        return rate
+        rate = float(reply[3:-2].decode("utf-8"))
+        if rate < 1.5:
+            return float(rate)
+        else:
+            return 0
+
 
     @staticmethod
     def crc_calc(input_string):
