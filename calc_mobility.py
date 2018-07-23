@@ -2,10 +2,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import glob
 import sys
-
+import os
 
 print('This programm will calculate the mobility for all files' +\
-'with the name "gatesweep*" in a specified folder.' )
+' with a specified name in a specified folder.' )
 folder = str(input('Define Foldername: '))
 filename =str(input('Define base of filenames (standard is gatesweep): ') or 'gatesweep')
 if not folder or folder == '' or filename == False or filename == '':
@@ -15,8 +15,8 @@ if folder[-1] == '/':
     folder = folder[0:-1]
 print('Working in Folder: {}'.format(folder))
 
-
-for fn in glob.glob('{}/{}*.dat'.format(folder, filename)):
+os.chdir(folder)
+for fn in glob.glob('{}*.dat'.format(filename)):
     if '_mobility' in fn:
         continue
     # Set up plots
@@ -26,7 +26,7 @@ for fn in glob.glob('{}/{}*.dat'.format(folder, filename)):
     ax1.set_xlabel('Gatevoltage [V]')
     ax1.set_ylabel(r'Resistance [$\Omega$]')
     ax.set_ylabel(r'Mobility')
-    title = fn.split('.')[0].split('\\')[-1]
+    title = fn.split('.')[0]
 
     # Read gatevoltage and Resistance            
     resistance_col = 4 # Define number, that resistance is in (currently 4 everywhere)
@@ -46,9 +46,10 @@ for fn in glob.glob('{}/{}*.dat'.format(folder, filename)):
     # plt.tight_layout()    
     ax.legend()
     ax1.legend()
-
+    figname = fn.split('.')[0] + '_mobility.png'
+    plt.savefig(figname)
     # Save to mobility file
-    savename = fn.split('/')[-1].split('.')[0] + '_mobility.dat'
+    savename = fn.split('.')[0] + '_mobility.dat'
     np.savetxt(savename, np.c_[gV_mob, mob],
      header="Gatevoltage    Mobility")
 plt.show()
