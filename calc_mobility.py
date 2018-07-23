@@ -7,15 +7,18 @@ import sys
 print('This programm will calculate the mobility for all files' +\
 'with the name "gatesweep*" in a specified folder.' )
 folder = str(input('Define Foldername: '))
-if not folder or folder == '':
-    print('No folder specified. Exiting...')
+filename =str(input('Define base of filenames (standard is gatesweep): ') or 'gatesweep')
+if not folder or folder == '' or filename == False or filename == '':
+    print('No folder or filename specified. Exiting...')
     sys.exit()
 if folder[-1] == '/':
     folder = folder[0:-1]
 print('Working in Folder: {}'.format(folder))
 
 
-for fn in glob.glob('{}/gatesweep*.dat'.format(folder)):
+for fn in glob.glob('{}/{}*.dat'.format(folder, filename)):
+    if '_mobility' in fn:
+        continue
     # Set up plots
     fig = plt.figure()
     ax = fig.add_subplot(211)
@@ -23,7 +26,7 @@ for fn in glob.glob('{}/gatesweep*.dat'.format(folder)):
     ax1.set_xlabel('Gatevoltage [V]')
     ax1.set_ylabel(r'Resistance [$\Omega$]')
     ax.set_ylabel(r'Mobility')
-    title = fn.split('.')[0]
+    title = fn.split('.')[0].split('\\')[-1]
 
     # Read gatevoltage and Resistance            
     resistance_col = 4 # Define number, that resistance is in (currently 4 everywhere)
