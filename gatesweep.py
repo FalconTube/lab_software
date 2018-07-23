@@ -10,10 +10,11 @@ class Gatesweep(Measurement):
         self.meter = Meter(2)
         self.lakeshore = Lakeshore()
         self.ask_savename()
+        self.ask_parameters()
+        self.wait_max = self.ask_wait_at_maxvals()
         savestring = \
         '# gatevoltage(V), temp(K), voltage(V), current(A), R_4pt(W)'
         self.create_savefile(savestring)
-        self.ask_parameters()
         self.init_ramp_parameters()
         try:
             self.start_gatesweep()            
@@ -34,6 +35,8 @@ class Gatesweep(Measurement):
             self.lastvoltage = self.gatevoltage
             self.gatevoltage += self.stepsize
         elif self.gatevoltage == self.maxvoltage:
+            if self.wait_max:
+                time.sleep(60)
             self.lastvoltage = self.gatevoltage
             self.gatevoltage -= self.stepsize
             self.maxcounter += 1
@@ -88,6 +91,15 @@ class Gatesweep(Measurement):
         self.maxvoltage = float(input('Set MAXvoltage (standard is 40, if not defined): ') or 40)
         self.minvoltage = float(input('Set MINvoltage (standard is -40, if not defined): ') or -40)
         self.stepsize = float(input('Set stepsize (standard is 0.5, if not defined): ') or 0.5)
+
+    def ask_wait_at_maxvals(self):
+        ''' Should max voltage be kept for certain time? '''
+        wait_max = str(input('Do you want to hold the maximum voltage for 30 sec? (y/n): ') or 'n').lower()
+        if wait_max == 'y':
+            print('I will wait at Gatevoltage = {}'.format(self.maxvoltage))
+            return True
+        else:
+            return False
 
     def start_gatesweep(self):
         # benchslope = False
