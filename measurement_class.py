@@ -24,8 +24,9 @@ class Measurement():
         ''' Creates savename based on user input '''
         savefolder = str(input('Input name of DIRECTORY: ') or 'testfolder') 
         self.savename = str(input('Input name of FILENAME: ') or 'testfile')
-        if not self.savename[-4] == '.':
-            self.savename += ".dat"
+        if len(self.savename) >= 4:
+            if not self.savename[-4] == '.':
+                self.savename += ".dat"
         if not os.path.exists(savefolder):
             os.makedirs(savefolder)
         os.chdir(savefolder)
