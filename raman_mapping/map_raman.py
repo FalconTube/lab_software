@@ -69,6 +69,7 @@ def draw_waterfall(data, measured_length):
     ax.set_ylabel(r"Intensity [a. u.]")
     ax.set_yticks([])
     ax.set_xlim(1200, 1850)
+    plt.tight_layout()
     plt.savefig('3D_raman.png')
 
 def DG_ratio(x,data):
@@ -114,6 +115,10 @@ def DG_ratio(x,data):
     ax.set_ylabel(r"Intensity [a. u.]")
     ax.set_xlim(1200, 1850)
     ax.set_yticks([])
+    ax.text(0.2, 0.95,'DG_ratio = {:2f}'.format(dg_ratio),
+     horizontalalignment='center',
+     verticalalignment='center',
+     transform = ax.transAxes)
     plt.savefig('Medium_raman.png')
 
 
