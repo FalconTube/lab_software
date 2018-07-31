@@ -120,6 +120,13 @@ class Lakeshore():
         temp = self.lakeshore.query("KRDG? B")
         return float(temp)
     
+    def set_temp(self, value):
+        ask_temp = self.lakeshore.query("SETP? 1")
+        print('Current temperature of lakeshore is: {}'.format(ask_temp))
+        print('Setting temperature of lakeshore to: {}'.format(value))
+        self.lakeshore.write("SETP 1, {}".format(value))
+        print('Current temperature of lakeshore is: {}'.format(ask_temp))
+
     def close(self):
         self.lakeshore.close()
 
