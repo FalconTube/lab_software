@@ -118,7 +118,7 @@ class Lakeshore():
     
     def read_temp(self):
         temp = self.lakeshore.query("KRDG? B")
-        return temp
+        return float(temp)
     
     def close(self):
         self.lakeshore.close()

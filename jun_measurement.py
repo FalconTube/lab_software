@@ -7,7 +7,7 @@ from measurement_class import Measurement
 class TwoPt_Jun(Measurement):
     def __init__(self):
         self.gate = Gate(1)
-        self.meter = Meter(2, four_wire=False)
+        self.meter = Meter(2, curr_source=0.00005, four_wire=False)
         self.lakeshore = Lakeshore()
         self.ask_savename()
         savestring = \
@@ -30,16 +30,17 @@ class TwoPt_Jun(Measurement):
         ax.set_ylabel("Resistance [Ohm]")
         ax1.set_ylabel("Temperature [K]")
         while 1:
-            time.sleep(1)
+            time.sleep(3)
             time_elapsed = time.time() - start_time
             meterV = self.meter.read_voltage() 
             meterI = self.meter.read_current() 
             temperature = self.lakeshore.read_temp()
-
+            resistance = meterV/meterI
             # Plot values in real time
+
             temps.append(temperature)
             t.append(time_elapsed)
-            r.append(meterV/meterI)
+            r.append(resistance)
             ax.plot(t, r, 'r.')
             ax1.plot(t, temps, 'k.')
             
@@ -47,7 +48,7 @@ class TwoPt_Jun(Measurement):
             plt.draw()
             plt.pause(0.01)
 
-            self.savefile.write('{}, {}, {} \n'.format(time_elapsed, temperature, r))
+            self.savefile.write('{}, {}, {} \n'.format(time_elapsed, temperature, resistance))
 
 
             
