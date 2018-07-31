@@ -21,30 +21,33 @@ class TwoPt_Jun(Measurement):
     def log_data(self):
         r = []
         t = []
+        temps = []
         start_time = time.time()
         fig = plt.figure()
         ax = fig.add_subplot(211)
         ax1 = fig.add_subplot(212)
-        ax.xlabel("Time [s]")
-        ax.ylabel("Resistance [Ohm]")
-        ax1.ylabel("Temperature [K]")
+        ax.set_xlabel("Time [s]")
+        ax.set_ylabel("Resistance [Ohm]")
+        ax1.set_ylabel("Temperature [K]")
         while 1:
             time.sleep(1)
             time_elapsed = time.time() - start_time
             meterV = self.meter.read_voltage() 
             meterI = self.meter.read_current() 
-            temp = self.lakeshore.read_temp()
+            temperature = self.lakeshore.read_temp()
 
             # Plot values in real time
+            temps.append(temperature)
+            t.append(time_elapsed)
             r.append(meterV/meterI)
             ax.plot(t, r, 'r.')
-            ax1.plot(t, temp, 'k.')
+            ax1.plot(t, temps, 'k.')
             
             plt.tight_layout()
             plt.draw()
             plt.pause(0.01)
 
-            self.savefile.write('{}, {}, {} \n'.format(time_elapsed, temp, r))
+            self.savefile.write('{}, {}, {} \n'.format(time_elapsed, temperature, r))
 
 
             
