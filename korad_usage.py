@@ -5,6 +5,10 @@ with KoradSerial(port='COMX') as korad:
     channel = korad.channels[0]
 
 class KoradSerialTest(TestCase):
+    def __init__(self):
+        self.setUp()
+        self.test_channel1()
+
     def setUp(self):
         self.device = KoradSerial('COMX', True)
         self.overrideSkippedTests = False
@@ -42,3 +46,6 @@ class KoradSerialTest(TestCase):
         self.device.output.off()
     # channel.voltage = 0.1
     # print(channel.output_voltage)
+
+if __name__ == "__main__":
+    k = KoradSerialTest()
