@@ -66,7 +66,7 @@ class UseKorad(KoradSerial):
             wtime *= 60
             currentlist.append(current)
             timelist.append(wtime)
-        for i,j in currentlist,timelist:
+        for i,j in zip(currentlist,timelist):
             i = self.round_value(i)
             print('Setting current to {} Amp'.format(i))
             self.channel.current = i
