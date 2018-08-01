@@ -1,51 +1,130 @@
 from korad_class import KoradSerial
 import time
+import numpy as np
+import sys
 
-with KoradSerial(port='COMX') as korad:
-    channel = korad.channels[0]
-
-class KoradSerialTest(TestCase):
+class UseKorad(KoradSerial):
     def __init__(self):
-        self.setUp()
-        self.test_channel1()
+        try:
+            self.korad = KoradSerial('COM5')
+            self.channel = self.korad.channels[0]
+            self.korad.output.off()
+            self.channel.current = 0.0
+            if self.ask_voltage():
+                setvoltage = float(\
+                input("Set new voltage value [default = 17]: ") or 17.0)
+                self.channel.voltage = setvoltage
+            else:
+                pass
+            self.korad.output.on()
+        except:
+            print('Cannot turn on the Korad. Exiting... ')
+            sys.exit()
 
-    def setUp(self):
-        self.device = KoradSerial('COMX', True)
-        self.overrideSkippedTests = False
+    def ask_voltage(self):
+        choice = str(input("Do you want to switch the voltage?: (y/n)") or 'n')
+        choice = choice.lower()
+        if choice == 'y':
+            return True
+        if choice == 'n':
+            return False
+        else:
+            print('Please input a valid choice. Exiting...')
+            sys.exit()
 
-    def test_channel1(self):
-        """ Test Channel 1's functionality.
-        This test assumes a small load (perhaps 100 ohm) is on the power supply so a small amount of current is drawn.
-        """
-        channel = self.device.channels[0]
+    def define_range(self):
+        start = float(input('Insert STARTing current in Amp: '))
+        end = float(input('Insert ENDing current in Amp: '))
+        ptime = float(input('Insert time, that the process shall take'
+        + ' in MINutes: '))
+        ptime *= 60 # Conversion so seconds
+        steps = np.linspace(start, end, ptime)
+        return steps
+    
+    def round_value(self, value):
+        if value >= 1.0:
+            value = round(value,3) # Max sensitivity 
+        else:
+            value = round(value,4) # Max sensisivity 
+        return value
 
-        # Turn off output and ensure that it's reading zeroes.
-        self.device.output.off()
-        time.sleep(1)
-        self.assertEqual(0, channel.output_voltage)
-        self.assertEqual(0, channel.output_current)
+    def run_range(self, steps):
+        init_step = self.round_value(steps[0])
+        self.ramp_to_current(init_step)
+        for i in steps:
+            i = self.round_value(i)
+            self.channel.current = i
+            time.sleep(0.98)
+    
+    def run_amount(self):
+        amount = int(input("How many ranges do you want to define? ") or 1)
+        if amount == 1:
+            testrange = self.define_range()
+            self.run_range(testrange)
+        else:
+            runlist = []
+            for n in range(amount):
+                print("\nInput run number {}".format(n))
+                testrange = self.define_range()
+                runlist.append(testrange)
+            
+            for n in runlist:
+                self.run_range(n)
 
-        # Set the current and voltage and ensure it's reporting back correctly.
-        channel.voltage = 1.34
-        channel.current = 0.1234
-        self.assertAlmostEqual(1.34, channel.voltage, 2)
-        self.assertAlmostEqual(0.1234, channel.current, 4)
+    def ramp_to_current(self, target):
+        ''' Ramps to target value over approx 10 seconds '''
+        current_current = self.channel.output_current()
+        time.sleep(0.05)
+        ramp_range = np.linspace(current_current, target, 40)
+        for i in ramp_range:
+            i = self.round_value(i)
+            self.channel.current = i
+            time.sleep(0.25)
 
-        # Set a different current and voltage to ensure that we're not reading old data.
-        channel.voltage = 1.30
-        channel.current = 0.123
-        self.assertAlmostEqual(1.30, channel.voltage, 2)
-        self.assertAlmostEqual(0.123, channel.current, 3)
+    def finish(self):
+        print('Turning off output and closing device.')
+        self.channel.current = 0.0
+        self.korad.output.off()
+        self.close()
 
-        # Turn on the output and ensure that current is flowing across the small load.
-        self.device.output.on()
-        time.sleep(1)
-        self.assertAlmostEqual(1.30, channel.output_voltage, 2)
-        self.assertLess(0, channel.output_current)
-
-        self.device.output.off()
-    # channel.voltage = 0.1
-    # print(channel.output_voltage)
+    def set_constant_values(self):
+        amount = int(input("How many steps do you want to define? ") or 1)
+        currentlist = []
+        timelist = []
+        for n in range(amount):
+            current = float(input("Set current for step {} in Amp: ".format(n)))
+            wtime = float(input("Set time to wait after step {} in MIN: "\
+            .format(n)))
+            wtime *= 60
+            currentlist.append(current)
+            timelist.append(wtime)
+        for i,j in zip(currentlist,timelist):
+            i = self.round_value(i)
+            print('Setting current to {} Amp'.format(i))
+            self.ramp_to_current(i)
+            print('Waiting for {} Min'.format(j))
+            time.sleep(j)
 
 if __name__ == "__main__":
-    k = KoradSerialTest()
+    k = UseKorad()
+    meas = str(input('Do you want to set constant values (V) or' +
+    ' some ranges (R)?: (V/R)'))
+    meas = meas.lower()
+    # if meas != 'r' or meas != 'v':
+    if meas == 'r':            
+        try:
+            k.run_amount()
+        except KeyboardInterrupt:
+            k.finish()
+        k.finish()
+    if meas == 'v':            
+        try:
+            k.set_constant_values()
+        except KeyboardInterrupt:
+            k.finish()
+        k.finish()
+    else:
+        print('Did not define measurement. Exiting... ')
+        sys.exit()
+    k.finish()
+    
