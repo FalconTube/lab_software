@@ -153,6 +153,9 @@ class KoradSerial(object):
 
         @current.setter
         def current(self, value):
+            if value >= 4.0:
+                print('Exceeding the save current of 4 Amps!!!\n Setting to 4A!')
+                value == 4.0
             self.__serial.send("ISET{0}:{1:05.3f}".format(self.number, value))
 
         @property
