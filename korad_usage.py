@@ -16,7 +16,8 @@ class UseKorad(KoradSerial):
                 self.channel.voltage = setvoltage
             else:
                 pass
-            self.korad.output.on()
+            # self.korad.output.on()
+            print('Would put output on now.')
         except:
             print('Cannot turn on the Korad. Exiting... ')
             sys.exit()
@@ -73,7 +74,8 @@ class UseKorad(KoradSerial):
 
     def ramp_to_current(self, target):
         ''' Ramps to target value over approx 10 seconds '''
-        current_current = self.channel.output_current()
+        current_current = self.channel.current
+        print('current current {}'.format(current_current))
         time.sleep(0.05)
         ramp_range = np.linspace(current_current, target, 40)
         for i in ramp_range:
@@ -85,7 +87,8 @@ class UseKorad(KoradSerial):
         print('Turning off output and closing device.')
         self.channel.current = 0.0
         self.korad.output.off()
-        self.close()
+        self.korad.close()
+        sys.exit()
 
     def set_constant_values(self):
         amount = int(input("How many steps do you want to define? ") or 1)
@@ -122,6 +125,7 @@ if __name__ == "__main__":
             k.set_constant_values()
         except KeyboardInterrupt:
             k.finish()
+            
         k.finish()
     else:
         print('Did not define measurement. Exiting... ')
