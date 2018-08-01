@@ -22,12 +22,16 @@ class UseKorad(KoradSerial):
         steps = np.linspace(start, end, ptime)
         return steps
     
+    def round_value(self, value):
+        if value >= 1.0:
+            value = round(value,3) # Max sensitivity 
+        else:
+            value = round(value,4) # Max sensisivity 
+        return value
+
     def run_range(self, steps):
         for i in steps:
-            if i >= 1.0:
-                i = round(i,3) # Maximal sensisivity 
-            else:
-                i = round(i,4) # Maximal sensisivity 
+            i = self.round_value(i)
             self.channel.current = i
             time.sleep(0.98)
     
@@ -51,12 +55,44 @@ class UseKorad(KoradSerial):
         self.korad.output.off()
         self.close()
 
+    def set_constant_values(self):
+        amount = int(input("How many steps do you want to define? ") or 1)
+        currentlist = []
+        timelist = []
+        for n in range(amount):
+            current = float(input("Set current for step {} in Amp: ".format(n)))
+            wtime = float(input("Set time to wait after step {} in MIN: "\
+            .format(n)))
+            wtime *= 60
+            currentlist.append(current)
+            timelist.append(wtime)
+        for i,j in currentlist,timelist:
+            i = self.round_value(i)
+            print('Setting current to {} Amp'.format(i))
+            self.channel.current = i
+            print('Waiting for {} Min'.format(j))
+            time.sleep(j)
 
 if __name__ == "__main__":
     k = UseKorad()
-    try:
-        k.run_amount()
-    except KeyboardInterrupt:
+    meas = str(input('Do you want to set constant values (V) or' +
+    ' some ranges (R)?: (V/R)'))
+    meas = meas.lower()
+    # if meas != 'r' or meas != 'v':
+    if meas == 'r':            
+        try:
+            k.run_amount()
+        except KeyboardInterrupt:
+            k.finish()
         k.finish()
+    if meas == 'v':            
+        try:
+            k.set_constant_values()
+        except KeyboardInterrupt:
+            k.finish()
+        k.finish()
+    else:
+        print('Did not define measurement. Exiting... ')
+        sys.exit()
     k.finish()
     
