@@ -16,8 +16,8 @@ class UseKorad(KoradSerial):
                 self.channel.voltage = setvoltage
             else:
                 pass
-            # self.korad.output.on()
-            print('Would put output on now.')
+            self.korad.output.on()
+            # print('Would put output on now.')
         except:
             print('Cannot turn on the Korad. Exiting... ')
             sys.exit()
@@ -105,7 +105,8 @@ class UseKorad(KoradSerial):
             i = self.round_value(i)
             print('Setting current to {} Amp'.format(i))
             self.ramp_to_current(i)
-            print('Waiting for {} Min'.format(j))
+            print('Waiting for {} Min\n from this time on: {}'\
+            .format(j/60, time.ctime()))
             time.sleep(j)
 
 if __name__ == "__main__":
