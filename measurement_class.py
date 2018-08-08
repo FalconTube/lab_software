@@ -43,6 +43,7 @@ class Measurement():
                 while os.path.isfile(save_tmp + "_{}.dat".format(i)):
                     i += 1
                 self.savename = save_tmp + "_{}.dat".format(i)
+                self.savename_png = save_tmp + "_{}.png".format(i)
         print('Savename is {}'.format(self.savename))
 
     def create_savefile(self, savestring):

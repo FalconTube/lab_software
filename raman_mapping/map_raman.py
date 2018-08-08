@@ -12,6 +12,13 @@ from mpl_toolkits.mplot3d import axes3d
 
 # plt.style.use('masterthesis')
 
+def update_progress(job_title, progress):
+    length = 50 # modify this to change the length
+    block = int(round(length*progress))
+    msg = "\r{0}: [{1}] {2}%".format(job_title, "#"*block + "-"*(length-block), round(progress*100, 0))
+    if progress >= 1: msg += " DONE\r\n"
+    sys.stdout.write(msg)
+    sys.stdout.flush()
 
 def much_greater(value,b,c):
     if value > b+50 and value > c+50:
@@ -30,6 +37,10 @@ def smooth(z):
 
 def draw_waterfall(data, measured_length):
     measured_length = int(measured_length)
+    sx = data.shape[0]
+    sy = data.shape[1]
+
+    # Init Plot
     Z = [[0,0],[0,0]]
     levels = range(0,measured_length+1,1)
     my_cmap = mpl.cm.rainbow
@@ -37,17 +48,12 @@ def draw_waterfall(data, measured_length):
      cmap=my_cmap)
     plt.clf()
     
-    sx = data.shape[0]
-    sy = data.shape[1]
-    
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    # ax.view_init(elev=19, azim=-180)
     NUM_COLORS = sx
     ax.set_prop_cycle('color',plt.cm.rainbow(np.linspace(0,1,NUM_COLORS)))
-
+    # Plot data
     Y = np.linspace(max(x),min(x), sy)
-
     plotcount = 0
     for n, i in enumerate(data):
         max_i = max(i)
@@ -60,6 +66,7 @@ def draw_waterfall(data, measured_length):
             ax.plot(Y, i)
             plotcount += 1
     
+        
     divider3 = make_axes_locatable(ax)
     cax = divider3.append_axes('right', size="5%", pad=0.05)
     cbar = fig.colorbar(CS3, cax=cax, label=r'Distance [$\mathrm{\mu}$m]')
@@ -72,9 +79,11 @@ def draw_waterfall(data, measured_length):
     plt.tight_layout()
     plt.savefig('3D_raman.png')
 
-def DG_ratio(x,data):
+def DG_ratio(x,data):   
     d_band = np.where(np.logical_and(1250<x, x<1420))
     g_band = np.where(np.logical_and(1550<x, x<1620))
+    # d_intensity = max(data[d_band])
+    # g_intensity = max(data[g_band])
     x_d = x[d_band]
     y_d = data[d_band]
     x_g = x[g_band]
@@ -96,17 +105,21 @@ def DG_ratio(x,data):
                  args=(x_g, y_g, lorentzian))
     results_g = out_g.params
 
+    
     plot_d = np.linspace(min(x_d), max(x_d), 200)
     plot_g = np.linspace(min(x_g), max(x_g), 200)
-    plot_whole = np.linspace(min(x), max(x), 1000)
+    # Stuff for plotting fits
+    # plot_whole = np.linspace(min(x), max(x), 1000)
     # plt.plot(plot_d, lorentzian(plot_d, results_d), 'r-', lw=3)
     # plt.plot(plot_g, lorentzian(plot_g, results_g), 'r-', lw=3)
     
     d_intensity = max(lorentzian_no_bg(plot_d, results_d))
     g_intensity = max(lorentzian_no_bg(plot_g, results_g))
     dg_ratio = d_intensity/g_intensity
-    print("D/G Ratio = {}".format(dg_ratio))
+    # print("D/G Ratio = {}".format(dg_ratio))
+    return d_intensity, g_intensity, dg_ratio
 
+def plot_1D(x, data, dg_ratio):
     fig = plt.figure()
     
     ax = fig.add_subplot(111)
@@ -120,6 +133,48 @@ def DG_ratio(x,data):
      verticalalignment='center',
      transform = ax.transAxes)
     plt.savefig('Medium_raman.png')
+
+def plot_map(x,data):
+    map_shape = data.shape[0]
+    width = length = int(np.sqrt(map_shape)) # Square map dimensions
+    if not perfect_square(map_shape):
+        print('Map is not square, dont know how to handle it.')
+        print('Please define the dimensions of the measurement')
+        length = int(input('Length: '))
+        width = int(input('Width: '))
+        # return None
+    
+    map_vals = []
+    fig = plt.figure()
+    row = 0
+    # Get dg ratios
+    for n, i in enumerate(data):
+        col = n % 20
+        if n % 20 == 0:
+            row += 1
+        d, g, dg = DG_ratio(x, i)
+        # Check if values are due to noise or real measurements
+        if dg > 0.2:
+            plt.plot(x,i, label='Row {}, Col {}'.format(row, col))
+            if g < np.mean(i):
+                # Then its due to noise. Plot it as 0.1.
+                dg = 0.1
+            else:
+                dg = dg
+        map_vals.append(dg)
+        update_progress('2D Map', n/map_shape)
+    update_progress('2D Map', 1)
+    plt.legend()
+    plt.title('DG noise')
+    plt.savefig('DG_noise.png', dpi=600)
+
+    # Plot the actual 2D map
+    fig = plt.figure()
+    twod_map = np.reshape(map_vals, (width,length))
+    plt.imshow(twod_map, vmin=0, vmax=0.5, cmap='jet')
+    plt.colorbar(label='DG ratio')
+    plt.tight_layout()
+    plt.savefig('2D_map.png', dpi=600)
 
 
 def linear(x, m, b):
@@ -159,6 +214,14 @@ def init_pars(x_init, a_init, offset_init):
     pars.add('b', value=offset_init)
     return pars
 
+def perfect_square(sqr):
+    root = np.sqrt(sqr)
+    round_root = round(root,0)
+    if round_root**2 == sqr:
+        return True
+    else:
+        return False
+
 if len(sys.argv) < 2:
     print('\nUsage:\n\
 1. Argument: WDF filename\n\
@@ -182,11 +245,13 @@ length_meas = len(x)
 num_meas = int(len(t)/length_meas)
 t_r = np.reshape(t,(num_meas,length_meas))
 
-mean_map = np.sum(t_r, axis=0)/len(t_r)
-DG_ratio(x,mean_map)
-
 print('Filtering/Smoothing data...')
 t_smooth = smooth(t_r)
+# print('Plotting 2D map. This will take a while...')
+plot_map(x,t_smooth)
+mean_map = np.sum(t_r, axis=0)/len(t_r)
+d_int, g_int, dg_ratio = DG_ratio(x,mean_map)
+plot_1D(x, mean_map, dg_ratio)
 reduced_data = t_smooth[::2][::2][::2]
 print('Plotting waterfall...')
 draw_waterfall(reduced_data, measured_length)
