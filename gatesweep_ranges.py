@@ -7,7 +7,6 @@ from measurement_class import Measurement
 class Gatesweep(Measurement):
     def __init__(self):
         self.gate = Gate(1)
-        # self.meter = Meter(2, four_wire=False, curr_source=1E-6)
         self.meter = Meter(2)
         self.lakeshore = Lakeshore()
         self.ask_savename()
@@ -20,7 +19,6 @@ class Gatesweep(Measurement):
         try:
             self.start_gatesweep()            
         except KeyboardInterrupt:
-            self.gate.set_gatevoltage(0)
             self.finish_measurement()
 
     def init_ramp_parameters(self):
@@ -29,6 +27,7 @@ class Gatesweep(Measurement):
         self.lastvoltage = 0
         self.finishedcounter = 0
         self.maxcounter = 0
+        self.reached_max = False
 
     def ramp_gatevoltage(self):
         ''' Increments the gatevoltage and finishes the measurement '''
@@ -38,7 +37,7 @@ class Gatesweep(Measurement):
             self.gatevoltage += self.stepsize
         elif self.gatevoltage == self.maxvoltage:
             if self.wait_max:
-                time.sleep(30) # wait at max voltage
+                time.sleep(30)
             self.lastvoltage = self.gatevoltage
             self.gatevoltage -= self.stepsize
             self.maxcounter += 1
@@ -57,6 +56,28 @@ class Gatesweep(Measurement):
             self.finishedcounter += 1
             if self.finishedcounter == 2:
                 self.finish_measurement()
+    
+    def ramp_range(self):
+        if self.reached_max == False:
+            if self.gatevoltage < self.maxvoltage:
+                self.gatevoltage += self.stepsize
+            if self.gatevoltage >= self.maxvoltage:
+                self.reached_max = True
+        if self.reached_max == True:
+            if self.maxcounter == 0:
+                self.gatevoltage = 0
+                self.maxcounter += 1
+                print('Sleeping for 20 seconds at 0 Voltage')
+                time.sleep(10)
+                print('Setting Gate to {}'.format(self.maxvoltage))
+                self.gatevoltage = self.maxvoltage
+            else:
+                if self.gatevoltage > self.minvoltage:
+                    self.gatevoltage -= self.stepsize
+                if self.gatevoltage <= self.minvoltage:
+                    self.finish_measurement()
+
+ 
 
     def benchmark_slope(self, x,y):
         """ Uses first few measurement points to generate initial slope.
@@ -131,6 +152,8 @@ class Gatesweep(Measurement):
         ax1.set_xlabel("Gatevoltage [V]")
         ax.set_ylabel("Resistance [Ohm]")
         ax1.set_ylabel("Gatecurrent [A]")
+        print('Setting Gatevoltage to {}'.format(self.minvoltage))
+        self.gate.set_gatevoltage(self.minvoltage)
         while 1:
             # Set gatevoltage and measure values
             print('Gatevoltage = {}'.format(self.gatevoltage))
@@ -168,9 +191,7 @@ class Gatesweep(Measurement):
 
             # Set gatevoltage to next value
             self.ramp_gatevoltage()
-        #save figure file as png
-        # figname = fn.split('.')[0] + '_mobility.png'
-        plt.savefig(self.savename_png)
+
             
 if __name__ == '__main__':
     gs = Gatesweep()
