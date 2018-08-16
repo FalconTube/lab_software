@@ -106,7 +106,7 @@ class Gatesweep(Measurement):
              ((self.maxvoltage/self.stepsize) +\
              (self.maxvoltage - self.minvoltage)/self.stepsize\
              )*self.waittime 
-        total_time_min = total_time_sec/60
+        total_time_min = round(total_time_sec/60,2)
         print('This measurement will take {} minutes.'.format(total_time_min))
 
 
@@ -170,7 +170,7 @@ class Gatesweep(Measurement):
             self.ramp_gatevoltage()
         #save figure file as png
         # figname = fn.split('.')[0] + '_mobility.png'
-        plt.savefig(self.savename_png)
+        #plt.savefig(self.savename_png)
             
 if __name__ == '__main__':
     gs = Gatesweep()
