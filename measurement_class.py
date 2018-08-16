@@ -16,6 +16,12 @@ class Measurement():
             i.close()
         for i in Lakeshore.instances:
             i.close()
+        if plt.get_fignums():
+            # If plots exists, then save them
+            print('Saving a PNG of the measurement...')
+            plt.savefig(self.savename_png)
+        else:
+            pass
 
         print('Successfully closed everything. Exiting...')
         sys.exit()
