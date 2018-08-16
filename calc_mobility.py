@@ -32,7 +32,9 @@ for fn in glob.glob('{}*.dat'.format(filename)):
     resistance_col = 4 # Define number, that resistance is in (currently 4 everywhere)
     gV, resistance = np.loadtxt(fn, usecols=(0,resistance_col),
     delimiter=',', unpack=True) 
-    R = resistance * 2*np.pi/np.log(2) # Sheet resistance
+    #R = resistance * 2*np.pi/np.log(2) # Sheet resistance infinite sheet
+    R = resistance * np.pi/np.log(2) # Sheet resistance finite sheet
+
     sigma = 1/R # Conductivity
     C = 11.5E-9 # 11.5 nanofarad
     curr = gV/R

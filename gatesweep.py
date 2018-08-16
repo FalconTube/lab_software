@@ -7,6 +7,7 @@ from measurement_class import Measurement
 class Gatesweep(Measurement):
     def __init__(self):
         self.gate = Gate(1)
+        # self.meter = Meter(2, four_wire=False, curr_source=1E-6)
         self.meter = Meter(2)
         self.lakeshore = Lakeshore()
         self.ask_savename()
@@ -19,6 +20,7 @@ class Gatesweep(Measurement):
         try:
             self.start_gatesweep()            
         except KeyboardInterrupt:
+            self.gate.set_gatevoltage(0)
             self.finish_measurement()
 
     def init_ramp_parameters(self):
@@ -36,7 +38,7 @@ class Gatesweep(Measurement):
             self.gatevoltage += self.stepsize
         elif self.gatevoltage == self.maxvoltage:
             if self.wait_max:
-                time.sleep(60)
+                time.sleep(30) # wait at max voltage
             self.lastvoltage = self.gatevoltage
             self.gatevoltage -= self.stepsize
             self.maxcounter += 1
@@ -106,25 +108,32 @@ class Gatesweep(Measurement):
         x = []
         y = []
         r = []
+        gc = []
         fig = plt.figure()
-        plt.xlabel("Gatevoltage [V]")
-        plt.ylabel("Resistance [Ohm]")
+        ax = fig.add_subplot(211)
+        ax1 = fig.add_subplot(212)
+        ax.set_xlabel("Gatevoltage [V]")
+        ax.set_ylabel("Resistance [Ohm]")
+        ax1.set_ylabel("Gatecurrent [A]")
         while 1:
             # Set gatevoltage and measure values
             print('Gatevoltage = {}'.format(self.gatevoltage))
             self.gate.set_gatevoltage(self.gatevoltage)  
-            time.sleep(0.1)
+            time.sleep(10) #waiting time between each gate voltage step
             meterV = self.meter.read_voltage() 
             meterI = self.meter.read_current() 
             temp=self.lakeshore.read_temp()
-
+            gatecurrent=self.gate.read_current()
+            
             # Plot values in real time
             # time.sleep(0.1)
             x.append(self.gatevoltage)
+            gc.append(gatecurrent)
             y.append(meterV)
             r.append(meterV/meterI)
 
-            plt.plot(x, r, 'k.')
+            ax.plot(x, r, 'k.')
+            ax1.plot(x, gc, 'k.')
             plt.draw()
             plt.pause(0.01)
 
@@ -135,7 +144,7 @@ class Gatesweep(Measurement):
             'V': meterV,
             'I': meterI,
             'R': meterV/meterI,
-            # 'I_gate': gatecurrent,
+            'I_gate': gatecurrent,
             }
             for i in writedict:
                 self.savefile.write('{} ,'.format(str(writedict[i]).strip()))
@@ -143,7 +152,9 @@ class Gatesweep(Measurement):
 
             # Set gatevoltage to next value
             self.ramp_gatevoltage()
-
+        #save figure file as png
+        # figname = fn.split('.')[0] + '_mobility.png'
+        plt.savefig(self.savename_png)
             
 if __name__ == '__main__':
     gs = Gatesweep()
