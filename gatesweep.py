@@ -7,6 +7,7 @@ from measurement_class import Measurement
 class Gatesweep(Measurement):
     def __init__(self):
         self.gate = Gate(1)
+        # self.meter = Meter(2, four_wire=False, curr_source=1E-6)
         self.meter = Meter(2)
         self.lakeshore = Lakeshore()
         self.ask_savename()
@@ -19,6 +20,7 @@ class Gatesweep(Measurement):
         try:
             self.start_gatesweep()            
         except KeyboardInterrupt:
+            self.gate.set_gatevoltage(0)
             self.finish_measurement()
 
     def init_ramp_parameters(self):
@@ -36,7 +38,7 @@ class Gatesweep(Measurement):
             self.gatevoltage += self.stepsize
         elif self.gatevoltage == self.maxvoltage:
             if self.wait_max:
-                time.sleep(60)
+                time.sleep(30) # wait at max voltage
             self.lastvoltage = self.gatevoltage
             self.gatevoltage -= self.stepsize
             self.maxcounter += 1
@@ -104,7 +106,7 @@ class Gatesweep(Measurement):
              ((self.maxvoltage/self.stepsize) +\
              (self.maxvoltage - self.minvoltage)/self.stepsize\
              )*self.waittime 
-        total_time_min = total_time_sec/60
+        total_time_min = round(total_time_sec/60,2)
         print('This measurement will take {} minutes.'.format(total_time_min))
 
 
@@ -166,7 +168,9 @@ class Gatesweep(Measurement):
 
             # Set gatevoltage to next value
             self.ramp_gatevoltage()
-
+        #save figure file as png
+        # figname = fn.split('.')[0] + '_mobility.png'
+        #plt.savefig(self.savename_png)
             
 if __name__ == '__main__':
     gs = Gatesweep()

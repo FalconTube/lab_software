@@ -127,7 +127,7 @@ class Gatesweep(Measurement):
              ((self.maxvoltage/self.stepsize) +\
              (self.maxvoltage - self.minvoltage)/self.stepsize\
              )*self.waittime 
-        total_time_min = total_time_sec/60
+        total_time_min = round(total_time_sec/60,2)
         print('This measurement will take {} minutes.'.format(total_time_min))
 
 
@@ -153,7 +153,8 @@ class Gatesweep(Measurement):
         ax.set_ylabel("Resistance [Ohm]")
         ax1.set_ylabel("Gatecurrent [A]")
         print('Setting Gatevoltage to {}'.format(self.minvoltage))
-        self.gate.set_gatevoltage(self.minvoltage)
+        self.gatevoltage = self.minvoltage
+        self.gate.set_gatevoltage(self.gatevoltage)
         while 1:
             # Set gatevoltage and measure values
             print('Gatevoltage = {}'.format(self.gatevoltage))
@@ -190,7 +191,7 @@ class Gatesweep(Measurement):
             self.savefile.write("\n")
 
             # Set gatevoltage to next value
-            self.ramp_gatevoltage()
+            self.ramp_range()
 
             
 if __name__ == '__main__':
