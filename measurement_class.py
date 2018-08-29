@@ -27,7 +27,9 @@ class Measurement():
         sys.exit()
 
     def ask_savename(self):
-        ''' Creates savename based on user input '''
+        ''' Creates savename based on user input
+            Creates self.savename and self.savename
+            return Nothing'''
         savefolder = str(input('Input name of DIRECTORY: ') or 'testfolder') 
         self.savename = str(input('Input name of FILENAME: ') or 'testfile')
         if len(self.savename) >= 4:
