@@ -1,7 +1,7 @@
 # __author__ = Yannic Falke
 
-from device_classes import *
-from measurement_class import Measurement
+from Classes.device_classes import *
+from Classes.measurement_class import Measurement
 
 
 class Gatesweep(Measurement):

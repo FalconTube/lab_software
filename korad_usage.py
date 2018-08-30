@@ -1,4 +1,4 @@
-from korad_class import KoradSerial
+from Classes.korad_class import KoradSerial
 import time
 import numpy as np
 import sys

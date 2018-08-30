@@ -1,4 +1,4 @@
-from device_classes import InficonSQM160
+from Classes.device_classes import InficonSQM160
 
 
 infi = InficonSQM160(port='COM7')

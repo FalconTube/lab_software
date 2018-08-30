@@ -1,4 +1,4 @@
-from measurement_class import Measurement
+from Classes.measurement_class import Measurement
 
 
 import time
