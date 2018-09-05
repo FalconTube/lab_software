@@ -15,6 +15,7 @@ class TempTracker(Measurement):
         with open(self.savename, 'a') as f:
             f.write('# Elapsed time [s] Temperature [C]\n')
             starttime = time.time()
+            f.write('# Starttime: {}\n'.format(starttime))
             writemode = True
             while writemode == True:
                 temp = float(input('Current Temperature: (exit by writing 999) '))

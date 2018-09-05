@@ -1,6 +1,6 @@
 # __author__ = Yannic Falke
 
-from device_classes import *
+from Classes.device_classes import *
 
 
 class Measurement():
