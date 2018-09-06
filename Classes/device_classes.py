@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 import serial
 import weakref
 
+rm = visa.ResourceManager()
+
 class Keithley():
     ''' Class for all Keithley devices '''
     instances = []
@@ -177,68 +179,81 @@ class InficonSQM160(object):
         crc2 = chr((crc >> 7) + 34)
         return(crc1, crc2)
 
-    # def comm(self, command):
-    #     """ Implements actual communication with device """
-    #     length = chr(len(command) + 34)
-    #     crc = self.crc_calc(length + command)
-    #     command = '!' + length + command + crc[0] + crc[1]
-    #     command_bytes = bytearray()
-    #     for i in range(0, len(command)):
-    #         command_bytes.append(ord(str(command[i])))
-    #     error = 0
-    #     while (error > -1) and (error < 20):
-    #         self.serial.write(command_bytes)
-    #         time.sleep(0.1)
-    #         reply = self.serial.read(self.serial.inWaiting())
-    #         crc = self.crc_calc(str(reply[1:-2]))
-    #         try:
-    #             crc_ok = (reply[-2] == crc[0] and reply[-1] == crc[1])
-    #         except IndexError:
-    #             crc_ok = False
-    #         if crc_ok:
-    #             error = -1
-    #             return_val = reply[3:-2]
-    #         else:
-    #             error = error + 1
-    #     return return_val
+class Lockin():
+    def __init__(self):
+        self.lockin = rm.open_resource("GPIB::8")
+        self.lockin.write('OUTX 1') # Sets device to talk over GPIB
 
-    # def show_version(self):
-    #     """ Read the firmware version """
-    #     command = '@'
-    #     return self.comm(command)
+    
+    def set_freq(self, value : float):
+        self.lockin.write('FREQ {}'.format(value))
+    
+    def set_amp(self, value : float):
+        self.lockin.write('SLVL {}'.format(value))
 
-    # def show_film_parameters(self):
-    #     """ Read the film paramters """
-    #     command = 'A1?'
-    #     print(self.comm(command))
+    def set_phase(self, value : float):
+        self.lockin.write('PHAS {}'.format(value))
+    
+    def set_phase_plus_90(self, value : float):
+        value = value + 90
+        self.lockin.write('PHAS {}'.format(value))
 
-    # def rate(self, channel=1):
-    #     """ Return the deposition rate """
-    #     command = 'L' + str(channel)
-    #     value_string = self.comm(command)
-    #     rate = float(value_string)
-    #     return rate
+    def set_phase_minux_90(self, value : float):
+        value = value - 90
+        self.lockin.write('PHAS {}'.format(value))
+    
+    def set_signal_input(self, inputstring : str):
+        inputstring = inputstring.strip()
+        thisdict = {
+            'A' : 0,
+            'A-B' : 1,
+            'IE6' : 2,
+            'IE8' : 3,
+        }
+        if inputstring not in thisdict:
+            print('Given Signal Input is not known. Use one of the following:\n {} \n Exiting ...'\
+            .format(thisdict))
+            sys.exit()
+        else:
+            corresp_value = thisdict[inputstring]
+            self.lockin.write('ISRC {}'.format(corresp_value))
 
-    # def thickness(self, channel=1):
-    #     """ Return the film thickness """
-    #     command = 'N' + str(channel)
-    #     value_string = self.comm(command)
-    #     thickness = float(value_string)
-    #     return thickness
+    def set_ACDC(self, signal : str):
+        signal = signal.upper().strip()
+        if signal == 'AC':
+            self.lockin.write('ICPL 0')
+        if signal == 'DC':
+            self.lockin.write('ICPL 1')
+        else:
+            print('Signal for ACDC not known. Set AC or DC as string value. Exiting ...')
+            sys.exit()
+    
+    def set_shield(self, signal : str):
+        signal = signal.lower().strip()
+        if signal == 'float':
+            self.lockin.write('IGND 0')
+        if signal == 'ground':
+            self.lockin.write('IGND 1')
+        else:
+            print('Signal for shield not known. Set float or ground as string value. Exiting ...')
+            sys.exit()
+    
+    def set_sensitivity(self, value : float):
+        # TODO Think of a nice way to define all sensi values
+        pass
 
-    # def frequency(self, channel=1):
-    #     """ Return the frequency of the crystal """
-    #     command = 'P' + str(channel)
-    #     value_string = self.comm(command)
-    #     frequency = float(value_string)
-    #     return frequency
+    def set_time_const(self, value : float):
+        # TODO Think of a nice way to define all sensi values
+        pass
 
-    # def crystal_life(self, channel=1):
-    #     """ Read crystal life """
-    #     command = 'R' + str(channel)
-    #     value_string = self.comm(command)
-    #     life = float(value_string)
-    #     return life
+    def read_chann_one_display(self):
+        self.lockin.write('OUTR? 1')
+
+    def read_chann_two_display(self):
+        self.lockin.write('OUTR? 2')
+    
+    def set_chann_one_display(self, inputstring):
+        print(self.lockin.write('DDEF1,0,0'))
 
 if __name__ == '__main__':
     print('\
