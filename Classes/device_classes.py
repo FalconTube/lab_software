@@ -183,6 +183,55 @@ class Lockin():
     def __init__(self):
         self.lockin = rm.open_resource("GPIB::8")
         self.lockin.write('OUTX 1') # Sets device to talk over GPIB
+        self.tauset={
+                0 : "10mus",
+                1 : "30mus",
+                2 : "100mus",
+                3 : "300mus",
+                4 : "1ms",
+                5 : "3ms",
+                6 : "10ms",
+                7 : "30ms",
+                8 : "100ms",
+                9 : "300ms",
+                10 : "1s",
+                11 : "3s",
+                12 : "10s",
+                13 : "30s",
+                14 : "100s",
+                15 : "300s",
+                16 : "1ks",
+                17 : "3ks",
+                18 : "10ks",
+                19 : "30ks"}
+        self.sensset={
+                0 : "2nV",
+                1 : "5nV",
+                2 : "10nV",
+                3 : "20nV",
+                4 : "50nV",
+                5 : "100nV",
+                6 : "200nV",
+                7 : "500nV",
+                8 : "1muV",
+                9 : "2muV",
+                10 : "5muV",
+                11 : "10muV",
+                12 : "20muV",
+                13 : "50muV",
+                14 : "100muV",
+                15 : "200muV",
+                16 : "500muV",
+                17 : "1mV",
+                18 : "2mV",
+                19 : "5mV",
+                20 : "10mV",
+                21 : "20mV",
+                22 : "50mV",
+                23 : "100mV",
+                24 : "200mV",
+                25 : "500mV",
+                26 : "1V"}
 
     
     def set_freq(self, value : float):
@@ -210,10 +259,9 @@ class Lockin():
             'IE6' : 2,
             'IE8' : 3,
         }
-        if inputstring not in thisdict:
-            print('Given Signal Input is not known. Use one of the following:\n {} \n Exiting ...'\
-            .format(thisdict))
-            sys.exit()
+        if not inputstring in thisdict:
+            raise ValueError('Given Signal Input is not known. Use one of the following:\n {}'\
+            .format(thisdict.keys()))
         else:
             corresp_value = thisdict[inputstring]
             self.lockin.write('ISRC {}'.format(corresp_value))
@@ -225,8 +273,7 @@ class Lockin():
         if signal == 'DC':
             self.lockin.write('ICPL 1')
         else:
-            print('Signal for ACDC not known. Set AC or DC as string value. Exiting ...')
-            sys.exit()
+            raise ValueError('Signal for ACDC not known. Set AC or DC as string value.')
     
     def set_shield(self, signal : str):
         signal = signal.lower().strip()
@@ -235,16 +282,24 @@ class Lockin():
         if signal == 'ground':
             self.lockin.write('IGND 1')
         else:
-            print('Signal for shield not known. Set float or ground as string value. Exiting ...')
-            sys.exit()
+            raise ValueError('Signal for shield not known.' +\
+             'Set FLOAT or GROUND as string value.')
     
-    def set_sensitivity(self, value : float):
-        # TODO Think of a nice way to define all sensi values
-        pass
+    def set_sensitivity(self, value : str):
+        if not value in self.sensset:
+            raise ValueError('Signal for sensitivity not known. Use one of' +\
+            'the following: {}'.format(self.sensset.keys()))
+        else:
+            sensval = int(self.sensset[value])
+            self.lockin.write('SENS {}'.format(sensval))
 
-    def set_time_const(self, value : float):
-        # TODO Think of a nice way to define all sensi values
-        pass
+    def set_time_const(self, value : str):
+        if not value in self.tauset:
+            raise ValueError('Signal for sensitivity not known. Use one of' +\
+            'the following: {}'.format(self.tauset.keys()))
+        else:
+            tauval = int(self.tauset[value])
+            self.lockin.write('OFLT {}'.format(tauval))
 
     def read_chann_one_display(self):
         self.lockin.write('OUTR? 1')
