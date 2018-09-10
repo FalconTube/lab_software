@@ -141,8 +141,7 @@ class InficonSQM160(object):
                                     bytesize=serial.EIGHTBITS,
                                     xonxoff=True)
 
-    def measure_rate(self, channel=1):
-        command = 'L1'
+    def use_command(self, command):
         length = chr(len(command) + 34)
         crc = self.crc_calc(length + command)
         command = '!' + length + command + crc[0] + crc[1]
@@ -152,12 +151,28 @@ class InficonSQM160(object):
         self.serial.write(command_bytes)
         time.sleep(0.1)
         reply = self.serial.read(self.serial.inWaiting())
+        return reply
+
+    def measure_rate(self, channel=1):
+        command = 'L1'
+        reply = self.use_command(command)
         rate = float(reply[3:-2].decode("utf-8"))
         if rate < 1.5:
             return float(rate)
         else:
             return 0
-
+    
+    def measure_thickness(self, channel=1):
+        command = 'N1'
+        reply = self.use_command(command)
+        thickness = float(reply[3:-2].decode("utf-8"))
+        return thickness
+    
+    def measure_frequency(self, channel=1):
+        command = 'P1'
+        reply = self.use_command(command)
+        frequency = float(reply[3:-2].decode("utf-8"))
+        return frequency
 
     @staticmethod
     def crc_calc(input_string):
