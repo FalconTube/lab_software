@@ -308,7 +308,7 @@ class Lockin():
         self.lockin.write('OUTR? 2')
     
     def set_chann_one_display(self, inputstring):
-        print(self.lockin.write('DDEF1,0,0'))
+        self.lockin.write('DDEF1,0,0')
 
 if __name__ == '__main__':
     print('\
