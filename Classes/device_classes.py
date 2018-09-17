@@ -140,6 +140,7 @@ class InficonSQM160(object):
                                     timeout=2,
                                     bytesize=serial.EIGHTBITS,
                                     xonxoff=True)
+        self.serial.close()
 
     def use_command(self, command):
         length = chr(len(command) + 34)

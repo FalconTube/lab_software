@@ -81,7 +81,7 @@ class UseKorad(KoradSerial):
         for i in ramp_range:
             i = self.round_value(i)
             self.channel.current = i
-            time.sleep(0.25)
+            time.sleep(0.25*3)  # 30 sec ramp time each
 
     def finish(self):
         print('Turning off output and closing device.')
