@@ -6,13 +6,14 @@ import os
 
 class Caching_System():
     def __init__(self):
+        self.use_cache = False
         self._initial_caching = 0
         self.cache_counter = 0
         self.cachefile = '.own_cache'
         self.ask_for_cache()
         if os.path.isfile(self.cachefile):
             self.cached_vals = self.read_cache()
-        self.use_cache = False
+        
 
     def ask_for_cache(self):
         usage = input(
