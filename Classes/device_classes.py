@@ -1,10 +1,10 @@
 # __author__ = Yannic Falke
 
-import sys 
-import visa # for GPIB communication
+import sys
+import visa  # for GPIB communication
 import time  # for loop over time
 import numpy as np
-import os # import OS
+import os  # import OS
 import tkinter
 import tkinter.messagebox as mbox
 import matplotlib.pyplot as plt
@@ -13,9 +13,11 @@ import weakref
 
 rm = visa.ResourceManager()
 
+
 class Keithley():
     ''' Class for all Keithley devices '''
     instances = []
+
     def __init__(self, gpibnum):
         self.__class__.instances.append(weakref.proxy(self))
         self._initialize_keithley(gpibnum)
@@ -26,10 +28,10 @@ class Keithley():
         print("GPIB::{}".format(gpibnum))
         self.keithley = rm.open_resource("GPIB::{}".format(gpibnum))
         print('Initialized Keithley number {}'.format(gpibnum))
-    
+
     def close(self):
         self.keithley.close()
-    
+
     def read_values(self):
         # values = self.keithley.query_ascii_values(':READ?')
         values = self.keithley.ask(':READ?')
@@ -37,18 +39,19 @@ class Keithley():
         self.voltage = float(values[0].strip())
         self.current = float(values[1].strip())
         self.resistance = float(values[2].strip())
-    
+
     def read_voltage(self):
-        self.read_values()    
+        self.read_values()
         return self.voltage
-    
+
     def read_current(self):
-        self.read_values()    
+        self.read_values()
         return self.current
-    
+
     def read_resistance(self):
-        self.read_values()    
+        self.read_values()
         return self.resistance
+
 
 class Gate(Keithley):
     def __init__(self, gpibnum, compliance=0.0010):
@@ -56,25 +59,26 @@ class Gate(Keithley):
         self._initialize_keithley(gpibnum)
         self._initialize_gate()
         pass
-    
+
     def _initialize_gate(self):
         self.gate = self.keithley
         gate_setup = [
-        '*RST',
-        '*CLS',
-        ':OUTP OFF',
-        ':SOUR:FUNC VOLT',       #Set voltage mode
-        ':SOUR:VOLT:MODE FIX',
-        ':SOUR:VOLT:RANG 200',   #Set acceptable voltage range
-        ':SENS:FUNC "CURR"',     #Set-up current measurement
-        ':SENS:CURR:PROT {}'.format(self.compliance),    #Set current compliance 100uA
-        ':SOUR:VOLT:LEV 0',  #Set voltage source to 0V
-        ':OUTP ON'
+            '*RST',
+            '*CLS',
+            ':OUTP OFF',
+            ':SOUR:FUNC VOLT',  # Set voltage mode
+            ':SOUR:VOLT:MODE FIX',
+            ':SOUR:VOLT:RANG 200',  # Set acceptable voltage range
+            ':SENS:FUNC "CURR"',  # Set-up current measurement
+            # Set current compliance 100uA
+            ':SENS:CURR:PROT {}'.format(self.compliance),
+            ':SOUR:VOLT:LEV 0',  # Set voltage source to 0V
+            ':OUTP ON'
         ]
-        
+
         for i in gate_setup:
             self.gate.write(i)
-    
+
     def set_gatevoltage(self, value):
         self.gate.write(':SOUR:VOLT:LEV {}'.format(value))
 
@@ -89,39 +93,42 @@ class Meter(Keithley):
         self._initialize_keithley(gpibnum)
         self._initialize_meter()
         pass
-    
+
     def _initialize_meter(self):
         self.meter = self.keithley
         meter_setup = [
-        '*RST',
-        '*CLS',
-        ':OUTP OFF',
-        ':SOUR:FUNC CURR',       #Set current mode
-        ':SOUR:CURR:MODE FIX',
-        ':SOUR:CURR:RANG 0.000100',   #Set acceptable current range to 100uA
-        ':SENS:FUNC "VOLT"',     #Set-up voltage measurement
-        ':SENS:VOLT:PROT 1.0',    #Set voltage compliance 
-        ':SYST:RSEN {}'.format(self.fwire_str),     #Turn on 4-wire sensing
-        ':SOUR:CURR:LEV {}'.format(self.curr_source),  #Set current source to 10 uA
-        ':OUTP ON'
+            '*RST',
+            '*CLS',
+            ':OUTP OFF',
+            ':SOUR:FUNC CURR',  # Set current mode
+            ':SOUR:CURR:MODE FIX',
+            ':SOUR:CURR:RANG 0.000100',  # Set acceptable current range to 100uA
+            ':SENS:FUNC "VOLT"',  # Set-up voltage measurement
+            ':SENS:VOLT:PROT 1.0',  # Set voltage compliance
+            ':SYST:RSEN {}'.format(self.fwire_str),  # Turn on 4-wire sensing
+            # Set current source to 10 uA
+            ':SOUR:CURR:LEV {}'.format(self.curr_source),
+            ':OUTP ON'
         ]
-        
+
         for i in meter_setup:
             self.meter.write(i)
+
 
 class Lakeshore():
     ''' Class for all Lakeshore devices '''
     instances = []
-    def  __init__(self):
+
+    def __init__(self):
         self.__class__.instances.append(weakref.proxy(self))
         rm = visa.ResourceManager()
         self.lakeshore = rm.open_resource('GPIB::12')
         self.lakeshore.write("*RST; status:preset; *ClS")
-    
+
     def read_temp(self):
         temp = self.lakeshore.query("KRDG? B")
         return float(temp)
-    
+
     def set_temp(self, value):
         ask_temp = self.lakeshore.query("SETP? 1")
         print('Current temperature of lakeshore is: {}'.format(ask_temp))
@@ -132,8 +139,10 @@ class Lakeshore():
     def close(self):
         self.lakeshore.close()
 
+
 class InficonSQM160(object):
     """ Driver for Inficon SQM160 QCM controller """
+
     def __init__(self, port='COM7'):
         self.serial = serial.Serial(port=port,
                                     baudrate=19200,
@@ -161,13 +170,13 @@ class InficonSQM160(object):
             return float(rate)
         else:
             return 0
-    
+
     def measure_thickness(self, channel=1):
         command = 'N1'
         reply = self.use_command(command)
         thickness = float(reply[3:-2].decode("utf-8"))
         return thickness
-    
+
     def measure_frequency(self, channel=1):
         command = 'P1'
         reply = self.use_command(command)
@@ -194,124 +203,125 @@ class InficonSQM160(object):
         crc2 = chr((crc >> 7) + 34)
         return(crc1, crc2)
 
-class Lockin():
-    def __init__(self):
-        self.lockin = rm.open_resource("GPIB::8")
-        self.lockin.write('OUTX 1') # Sets device to talk over GPIB
-        self.tauset={
-                0 : "10mus",
-                1 : "30mus",
-                2 : "100mus",
-                3 : "300mus",
-                4 : "1ms",
-                5 : "3ms",
-                6 : "10ms",
-                7 : "30ms",
-                8 : "100ms",
-                9 : "300ms",
-                10 : "1s",
-                11 : "3s",
-                12 : "10s",
-                13 : "30s",
-                14 : "100s",
-                15 : "300s",
-                16 : "1ks",
-                17 : "3ks",
-                18 : "10ks",
-                19 : "30ks"}
-        self.sensset={
-                0 : "2nV",
-                1 : "5nV",
-                2 : "10nV",
-                3 : "20nV",
-                4 : "50nV",
-                5 : "100nV",
-                6 : "200nV",
-                7 : "500nV",
-                8 : "1muV",
-                9 : "2muV",
-                10 : "5muV",
-                11 : "10muV",
-                12 : "20muV",
-                13 : "50muV",
-                14 : "100muV",
-                15 : "200muV",
-                16 : "500muV",
-                17 : "1mV",
-                18 : "2mV",
-                19 : "5mV",
-                20 : "10mV",
-                21 : "20mV",
-                22 : "50mV",
-                23 : "100mV",
-                24 : "200mV",
-                25 : "500mV",
-                26 : "1V"}
 
-    
-    def set_freq(self, value : float):
+class Lockin():
+    def __init__(self, gpib_number=8):
+        self.lockin = rm.open_resource("GPIB::{}".format(gpib_number))
+        self.lockin.write('OUTX 1')  # Sets device to talk over GPIB
+        self.tauset = {
+            0: "10mus",
+            1: "30mus",
+            2: "100mus",
+            3: "300mus",
+            4: "1ms",
+            5: "3ms",
+            6: "10ms",
+            7: "30ms",
+            8: "100ms",
+            9: "300ms",
+            10: "1s",
+            11: "3s",
+            12: "10s",
+            13: "30s",
+            14: "100s",
+            15: "300s",
+            16: "1ks",
+            17: "3ks",
+            18: "10ks",
+            19: "30ks"}
+        self.sensset = {
+            0: "2nV",
+            1: "5nV",
+            2: "10nV",
+            3: "20nV",
+            4: "50nV",
+            5: "100nV",
+            6: "200nV",
+            7: "500nV",
+            8: "1muV",
+            9: "2muV",
+            10: "5muV",
+            11: "10muV",
+            12: "20muV",
+            13: "50muV",
+            14: "100muV",
+            15: "200muV",
+            16: "500muV",
+            17: "1mV",
+            18: "2mV",
+            19: "5mV",
+            20: "10mV",
+            21: "20mV",
+            22: "50mV",
+            23: "100mV",
+            24: "200mV",
+            25: "500mV",
+            26: "1V"}
+
+    def set_freq(self, value: float):
         self.lockin.write('FREQ {}'.format(value))
-    
-    def set_amp(self, value : float):
+
+    def set_amp(self, value: float):
         self.lockin.write('SLVL {}'.format(value))
 
-    def set_phase(self, value : float):
+    def set_phase(self, value: float):
         self.lockin.write('PHAS {}'.format(value))
-    
-    def set_phase_plus_90(self, value : float):
+
+    def set_phase_plus_90(self, value: float):
         value = value + 90
         self.lockin.write('PHAS {}'.format(value))
 
-    def set_phase_minux_90(self, value : float):
+    def set_phase_minus_90(self, value: float):
         value = value - 90
         self.lockin.write('PHAS {}'.format(value))
-    
-    def set_signal_input(self, inputstring : str):
+
+    def set_signal_input(self, inputstring: str):
         inputstring = inputstring.strip()
         thisdict = {
-            'A' : 0,
-            'A-B' : 1,
-            'IE6' : 2,
-            'IE8' : 3,
+            'A': 0,
+            'A-B': 1,
+            'IE6': 2,
+            'IE8': 3,
         }
         if not inputstring in thisdict:
-            raise ValueError('Given Signal Input is not known. Use one of the following:\n {}'\
-            .format(thisdict.keys()))
+            raise ValueError('Given Signal Input is not known. Use one of the following:\n {}'
+                             .format(thisdict.keys()))
         else:
             corresp_value = thisdict[inputstring]
             self.lockin.write('ISRC {}'.format(corresp_value))
 
-    def set_ACDC(self, signal : str):
+    def set_ACDC(self, signal: str):
         signal = signal.upper().strip()
         if signal == 'AC':
             self.lockin.write('ICPL 0')
         if signal == 'DC':
             self.lockin.write('ICPL 1')
         else:
-            raise ValueError('Signal for ACDC not known. Set AC or DC as string value.')
-    
-    def set_shield(self, signal : str):
+            raise ValueError(
+                'Signal for ACDC not known. Set AC or DC as string value.')
+
+    def set_shield(self, signal: str):
         signal = signal.lower().strip()
         if signal == 'float':
             self.lockin.write('IGND 0')
         if signal == 'ground':
             self.lockin.write('IGND 1')
         else:
-            raise ValueError('Signal for shield not known.' +\
-             'Set FLOAT or GROUND as string value.')
-    
-    def set_sensitivity(self, value : str):
+            raise ValueError('Signal for shield not known.' +
+                             'Set FLOAT or GROUND as string value.')
+
+    def set_sensitivity(self, value: str):
         if not value in self.sensset:
-            raise ValueError('Signal for sensitivity not known. Use one of' +\
-            'the following: {}'.format(self.sensset.keys()))
+            raise ValueError('Signal for sensitivity not known. Use one of' +
+                             'the following: {}'.format(self.sensset.keys()))
         else:
             sensval = int(self.sensset[value])
             self.lockin.write('SENS {}'.format(sensval))
 
-    def set_time_const(self, value : str):
+    def set_time_const(self, value: str):
         if not value in self.tauset:
-            raise ValueError('Signal for sensitivity not known. Use one of' +\
-            'the following: {}'.format(self.tauset.keys()))
+            raise ValueError('Signal for sensitivity not known. Use one of' +
+                             'the following: {}'.format(self.tauset.keys()))
         else:
             tauval = int(self.tauset[value])
             self.lockin.write('OFLT {}'.format(tauval))
@@ -321,9 +331,13 @@ class Lockin():
 
     def read_chann_two_display(self):
         self.lockin.write('OUTR? 2')
-    
+
     def set_chann_one_display(self, inputstring):
         print(self.lockin.write('DDEF1,0,0'))
+
+    def read_voltage(self):
+        self.lockin.write('OUTR? 1')
+
 
 if __name__ == '__main__':
     print('\
