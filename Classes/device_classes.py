@@ -84,32 +84,54 @@ class Gate(Keithley):
 
 
 class Meter(Keithley):
-    def __init__(self, gpibnum, curr_source=0.00001, four_wire=True):
+    def __init__(self, gpibnum, curr_source=0.00001, four_wire=True,
+                 volt_source=0.0, set_source_voltage=False):
         if four_wire == True:
             self.fwire_str = 'ON'
         else:
             self.fwire_str = 'OFF'
         self.curr_source = curr_source
+        self.volt_source = volt_source
+        self.set_source_voltage = set_source_voltage
         self._initialize_keithley(gpibnum)
         self._initialize_meter()
         pass
 
     def _initialize_meter(self):
         self.meter = self.keithley
-        meter_setup = [
-            '*RST',
-            '*CLS',
-            ':OUTP OFF',
-            ':SOUR:FUNC CURR',  # Set current mode
-            ':SOUR:CURR:MODE FIX',
-            ':SOUR:CURR:RANG 0.000100',  # Set acceptable current range to 100uA
-            ':SENS:FUNC "VOLT"',  # Set-up voltage measurement
-            ':SENS:VOLT:PROT 1.0',  # Set voltage compliance
-            ':SYST:RSEN {}'.format(self.fwire_str),  # Turn on 4-wire sensing
-            # Set current source to 10 uA
-            ':SOUR:CURR:LEV {}'.format(self.curr_source),
-            ':OUTP ON'
-        ]
+        if not self.set_source_voltage:
+            meter_setup = [
+                '*RST',
+                '*CLS',
+                ':OUTP OFF',
+                ':SOUR:FUNC CURR',  # Set current mode
+                ':SOUR:CURR:MODE FIX',
+                ':SOUR:CURR:RANG 0.000100',  # Set acceptable current range to 100uA
+                ':SENS:FUNC "VOLT"',  # Set-up voltage measurement
+                ':SENS:VOLT:PROT 1.0',  # Set voltage compliance
+                # Turn on 4-wire sensing
+                ':SYST:RSEN {}'.format(self.fwire_str),
+                # Set current source to 10 uA
+                ':SOUR:CURR:LEV {}'.format(self.curr_source),
+                ':OUTP ON'
+            ]
+        else:
+            meter_setup = [
+                '*RST',
+                '*CLS',
+                ':OUTP OFF',
+                ':SOUR:FUNC VOLT',  # Set voltage mode
+                ':SOUR:VOLT:MODE FIX',
+                ':SOUR:VOLT:RANG 200',  # Set acceptable voltage range
+                ':SENS:FUNC "CURR"',  # Set-up current measurement
+                # Turn on 4-wire sensing
+                ':SYST:RSEN {}'.format(self.fwire_str),
+                # Set current compliance 100uA
+                # ':SENS:CURR:PROT {}'.format(self.compliance),
+                # Set voltage source to 0V
+                ':SOUR:VOLT:LEV {}'.format(self.volt_source),
+                ':OUTP ON'
+            ]
 
         for i in meter_setup:
             self.meter.write(i)
@@ -207,6 +229,7 @@ class InficonSQM160(object):
 class Lockin():
     def __init__(self, gpib_number=8):
         self.lockin = rm.open_resource("GPIB::{}".format(gpib_number))
+        # self.lockin.write("")
         self.lockin.write('OUTX 1')  # Sets device to talk over GPIB
         self.tauset = {
             0: "10mus",
