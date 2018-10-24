@@ -9,6 +9,7 @@ class Measurement():
     _cache = Caching_System()
 
     def __init__(self):
+        # self.cache = Caching_System()
         pass
 
     def finish_measurement(self):
@@ -44,12 +45,12 @@ class Measurement():
             os.makedirs(savefolder)
         os.chdir(savefolder)
         if os.path.isfile(self.savename):
-            # choice = str(self._cache.cache_input(
+            # choice = str(self.cache.cache_input(
             #     "File already exists. Do you want to rename? [y/n] ",
             #     default='n')
             # )
             # if choice == 'y':
-            #     self.savename = self._cache.cache_input("New filename: ")
+            #     self.savename = self.cache.cache_input("New filename: ")
             #     if not "." in self.savename:
             #         self.savename += ".dat"
             # if choice == 'n':
@@ -75,14 +76,16 @@ class Measurement():
         self.savefile.write(savestring + "\n")
 
     def fast_plotter(self, x: list, y: list, ax_num=1, ax_pos=0, p=40,
-                     plotstyle='k.', labels=("", "")) -> None:
+                     plotstyle='k.', multiplier=1, labels=("", "")) -> None:
         """ Fast plotter for x and y, both as lists.\n
         Just pass the lists you want to plot, do not create axes yourself.\n
         ax_num: Values = 1 or 2, number of axes to create.\n
         ax_pos: Values = 1 or 2, upper or lower position.\n
         p: Controls how much percentage to ax boundaries is added.
         """
+        y = np.asarray(y)*multiplier
         self.currx, self.curry = x[-1], y[-1]
+        
 
         def percentage(x, p=p):
             return x + x/100*p
@@ -145,6 +148,7 @@ class Measurement():
                 thisax = self.fast_fig
                 plt.xlabel(labels[0])
                 plt.ylabel(labels[1])
+                self.initial_fastplot += 1
         if ax_num == 2:
             thisax = self.fast_fig.axes[int(ax_pos-1)]
             if str(thisax.get_xlabel()) == '':
@@ -152,8 +156,9 @@ class Measurement():
                 thisax.set_ylabel(labels[1])
 
         # Initial plot has been created, now start plotting
-        else:
-
+        
+        if self.initial_fastplot == 1:
+            # print(y)
             if check_boundaries(ax_num, ax_pos):
                 # Sets new axes and replots whole plot
                 if ax_num == 1:
@@ -163,7 +168,8 @@ class Measurement():
                         self.fast_line_1.set_data(x, y)
                     if ax_pos == 2:
                         self.fast_line_2.set_data(x, y)
-                plt.pause(0.001)
+                # plt.pause(0.001)
+                plt.pause(1)
             else:
                 # Only redraws points
                 if ax_num == 1:
