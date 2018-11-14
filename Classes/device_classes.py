@@ -135,6 +135,9 @@ class Meter(Keithley):
 
         for i in meter_setup:
             self.meter.write(i)
+    
+    def set_voltage(self, value):
+        self.meter.write(':SOUR:VOLT:LEV {}'.format(value))
 
 
 class Lakeshore():
