@@ -42,18 +42,20 @@ class Logger(Measurement):
         four_point_fac = np.pi * 2 / ln(2)
         reset_start = time.time()
         while 1:
-            time.sleep(3)
+            time.sleep(1)
             time_elapsed = time.time() - start_time
             reset_time = time.time() - reset_start
             if self.gain_time != 0:
                 if reset_time >= self.gain_time:
                     self.meter.auto_gain()
+                    time.sleep(10)
                     reset_start = time.time()
-            meterV = self.meter.read_voltage()
+            meterV = float(self.meter.read_voltage())
             # meterI = self.meter.read_current()
-            meterI = 1E-6 # ampere
+            meterI = 1E-5 # ampere
             temperature = self.lakeshore.read_temp()
-            resistance = meterV / meterI * four_point_fac
+            #resistance = meterV / meterI * four_point_fac           #with van der pauw geometrie
+            resistance = meterV / meterI                             #without van der pauw geometrie
             # Plot values in real time
 
             temps.append(temperature)
