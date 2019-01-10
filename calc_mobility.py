@@ -4,10 +4,11 @@ import glob
 import sys
 import os
 
-print('This programm will calculate the mobility for all files' +\
-' with a specified name in a specified folder.' )
+print('This programm will calculate the mobility for all files' +
+      ' with a specified name in a specified folder.')
 folder = str(input('Define Foldername: '))
-filename =str(input('Define base of filenames (standard is gatesweep): ') or 'gatesweep')
+filename = str(
+    input('Define base of filenames (standard is gatesweep): ') or 'gatesweep')
 if not folder or folder == '' or filename == False or filename == '':
     print('No folder or filename specified. Exiting...')
     sys.exit()
@@ -28,32 +29,30 @@ for fn in glob.glob('{}*.dat'.format(filename)):
     ax.set_ylabel(r'Mobility')
     title = fn.split('.')[0]
 
-    # Read gatevoltage and Resistance            
-    resistance_col = 4 # Define number, that resistance is in (currently 4 everywhere)
-    gV, resistance = np.loadtxt(fn, usecols=(0,resistance_col),
-    delimiter=',', unpack=True) 
-    #R = resistance * 2*np.pi/np.log(2) # Sheet resistance infinite sheet
-    R = resistance * np.pi/np.log(2) # Sheet resistance finite sheet
+    # Read gatevoltage and Resistance
+    # Define number, that resistance is in (currently 4 everywhere)
+    resistance_col = 4
+    gV, resistance = np.loadtxt(
+        fn, usecols=(0, resistance_col), delimiter=',', unpack=True)
+    # R = resistance * 2*np.pi/np.log(2) # Sheet resistance infinite sheet
+    R = resistance * np.pi / np.log(2)  # Sheet resistance finite sheet
 
-    sigma = 1/R # Conductivity
-    C = 11.5E-9 # 11.5 nanofarad
-    curr = gV/R
-    mob = 1/C * np.diff(sigma)/np.diff(gV)
-    
+    sigma = 1 / R  # Conductivity
+    C = 11.5E-9  # 11.5 nanofarad
+    curr = gV / R
+    mob = 1 / C * np.diff(sigma) / np.diff(gV)
+
     # Plot values
     gV_mob = gV[0:-1]
-    ax.plot(gV_mob,mob,label='Mobility')
-    ax1.plot(gV,resistance,label='Resistance')
+    ax.plot(gV_mob, mob, label='Mobility')
+    ax1.plot(gV, resistance, label='Resistance')
     fig.suptitle(title)
-    # plt.tight_layout()    
+    # plt.tight_layout()
     ax.legend()
     ax1.legend()
     figname = fn.split('.')[0] + '_mobility.png'
     plt.savefig(figname)
     # Save to mobility file
     savename = fn.split('.')[0] + '_mobility.dat'
-    np.savetxt(savename, np.c_[gV_mob, mob],
-     header="Gatevoltage    Mobility")
+    np.savetxt(savename, np.c_[gV_mob, mob], header="Gatevoltage    Mobility")
 plt.show()
-
-
