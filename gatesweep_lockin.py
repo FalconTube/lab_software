@@ -21,6 +21,7 @@ class Gatesweep(Measurement):
         self.lakeshore = Lakeshore()
         self.ask_savename()
         self.ask_parameters()
+        self.ask_autogain_time()
         self.wait_max = self.ask_wait_at_maxvals()
         savestring = \
             '# gatevoltage(V), temp(K), voltage(V), current(A), R_4pt(W)'
@@ -129,6 +130,11 @@ class Gatesweep(Measurement):
             return True
         else:
             return False
+    
+    def ask_autogain_time(self):
+        self.gain_time = float(self._cache.cache_input(
+            'Set time [MIN] after which AUTO GAIN is performed (0 for never): ', 0
+        ))
 
     def start_gatesweep(self):
         # benchslope = False

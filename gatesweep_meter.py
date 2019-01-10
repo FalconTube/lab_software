@@ -32,6 +32,7 @@ class Gatesweep(Measurement):
 
     def ramp_gatevoltage(self):
         ''' Increments the gatevoltage and finishes the measurement '''
+        self.metervoltage = round(self.metervoltage, self.precision)
         if self.metervoltage < self.maxvoltage and \
                 self.metervoltage >= self.lastvoltage:
             self.lastvoltage = self.metervoltage
@@ -57,6 +58,7 @@ class Gatesweep(Measurement):
             self.finishedcounter += 1
             if self.finishedcounter == 2:
                 self.finish_measurement()
+        self.metervoltage = round(self.metervoltage, self.precision)
 
     def benchmark_slope(self, x, y):
         """ Uses first few measurement points to generate initial slope.
@@ -101,6 +103,7 @@ class Gatesweep(Measurement):
         self.waittime = float(self._cache.cache_input(
             'Set wait time after each step (standard is 1 sec, if not defined): ', 1))
         # Calculate total time, that measurement will take in SEC
+        self.precision = len(str(self.stepsize).split('.')[-1])
         if self.minvoltage < 0:
             total_time_sec = ((self.maxvoltage/self.stepsize) +
                               (self.maxvoltage - self.minvoltage)/self.stepsize +

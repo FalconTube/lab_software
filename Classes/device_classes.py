@@ -364,6 +364,9 @@ class Lockin():
 
     def read_voltage(self):
         return(self.lockin.ask('OUTR? 1'))
+    
+    def auto_gain(self):
+        self.lockin.write('AGAN')
 
     def auto_gain(self):
         print("Auto gaining... ")
