@@ -2,7 +2,7 @@ import os
 import sys
 import signal
 from PyQt5 import QtGui, uic
-from PyQt5.QtWidgets import QMainWindow, QApplication
+from PyQt5.QtWidgets import QMainWindow, QApplication, QPushButton
 
 
 version = sys.version[0]
@@ -16,7 +16,9 @@ else:
 
 Programs = {
         'Gatesweep' : 'gatesweep.py',
-        'Test_Button' : 't.py',
+        'Gatesweep Lockin' : 'gatesweep_lockin.py',
+        'Resistance vs time' : 'resist_temp_time.py',
+        'Use Korad Heating' : 'korad_usage.py',
         }
 #subprocess.call('start /wait python bb.py', shell=True)
 
@@ -29,13 +31,10 @@ class MyWindow(QMainWindow):
         #signal.signal(signal.SIGINT, self.handle_ctrl_c)
         signal.signal(signal.SIGINT, signal.SIG_IGN)
         UI = uic.loadUi('Starter.ui', self)
-        UI.Gatesweep.released.connect(self.start_selection)
-        UI.Test_Button.released.connect(self.start_selection)
+        for button in UI.AllButtonsBox.findChildren(QPushButton):
+            print(button.text())
+            button.released.connect(self.start_selection)
         self.show()
-    
-    def handle_ctrl_c(self):
-        print('Handler!')
-        pass
 
     def start_selection(self):
         btn = self.sender()
