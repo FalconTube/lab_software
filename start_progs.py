@@ -17,10 +17,12 @@ else:
 
 Programs = {
         'Gatesweep' : 'gatesweep.py',
+        'Gatesweep 2pt' : 'gatesweep_2pt.py',
         'Gatesweep Lockin' : 'gatesweep_lockin.py',
         'Resistance vs time' : 'resist_temp_time.py',
         'Use Korad Heating' : 'korad_usage.py',
         'Sweep Meter' : 'sweep_meter.py',
+        'Sweep Meter 2pt' : 'sweep_meter_2pt.py',
         }
 
 pwd = os.getcwd()
@@ -32,7 +34,11 @@ class MyWindow(QMainWindow):
         #signal.signal(signal.SIGINT, self.handle_ctrl_c)
         signal.signal(signal.SIGINT, signal.SIG_IGN)
         UI = uic.loadUi('Starter.ui', self)
-        for button in UI.AllButtonsBox.findChildren(QPushButton):
+        for button in UI.AllButtonsBox_1.findChildren(QPushButton):
+            button.released.connect(self.start_selection)
+        for button in UI.AllButtonsBox_2.findChildren(QPushButton):
+            button.released.connect(self.start_selection)
+        for button in UI.AllButtonsBox_3.findChildren(QPushButton):
             button.released.connect(self.start_selection)
         self.show()
 
