@@ -1,5 +1,6 @@
 import os
 import sys
+import signal
 from PyQt5 import QtGui, uic
 from PyQt5.QtWidgets import QMainWindow, QApplication
 
@@ -15,8 +16,9 @@ else:
 
 Programs = {
         'Gatesweep' : 'gatesweep.py',
-        'Test_Button' : 'calc_mobility.py',
+        'Test_Button' : 't.py',
         }
+#subprocess.call('start /wait python bb.py', shell=True)
 
 pwd = os.getcwd()
 print(pwd)
@@ -24,10 +26,16 @@ print(pwd)
 class MyWindow(QMainWindow):
     def __init__(self):
         super(MyWindow, self).__init__()
+        #signal.signal(signal.SIGINT, self.handle_ctrl_c)
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
         UI = uic.loadUi('Starter.ui', self)
         UI.Gatesweep.released.connect(self.start_selection)
         UI.Test_Button.released.connect(self.start_selection)
         self.show()
+    
+    def handle_ctrl_c(self):
+        print('Handler!')
+        pass
 
     def start_selection(self):
         btn = self.sender()
