@@ -8,13 +8,16 @@ class Gatesweep(Measurement):
     def __init__(self):
         self.gate = Gate(1)
         # self.meter = Meter(2, four_wire=False, curr_source=1E-6)
-        self.meter = Meter(2)
+        four_wire = str(input('Use 4-wire or 2-wire? [4/2]'))
+        curr_source = float(input('Source current (default 1E-6): ' or float(1E-6)))
+        fw = True if four_wire == '4' else False
+        self.meter = Meter(2, four_wire=fw, curr_source=curr_source)
         self.lakeshore = Lakeshore()
         self.ask_savename()
         self.ask_parameters()
         self.wait_max = self.ask_wait_at_maxvals()
         savestring = \
-            '# gatevoltage(V), temp(K), voltage(V), current(A), R_4pt(W)'
+            '# gatevoltage(V), temp(K), voltage(V), current(A), R(Ohm), Gatecurrent(A)'
         self.create_savefile(savestring)
         self.init_ramp_parameters()
         try:
@@ -101,7 +104,7 @@ class Gatesweep(Measurement):
         self.stepsize = float(self._cache.cache_input(
             'Set stepsize (standard is 0.5, if not defined): ', 0.5))
         self.waittime = float(self._cache.cache_input(
-            'Set wait time after each step (standard is 1 sec, if not defined): ', 1))
+            'Set wait time after each step (standard is 0 sec, if not defined): ', 0))
         # Calculate total time, that measurement will take in SEC
         self.precision = len(str(self.stepsize).split('.')[-1])
         if self.minvoltage < 0:
@@ -113,7 +116,7 @@ class Gatesweep(Measurement):
             total_time_sec = ((self.maxvoltage/self.stepsize) +
                               (self.maxvoltage - self.minvoltage)/self.stepsize
                               )*self.waittime
-        total_time_min = round(total_time_sec/60, 2)
+        total_time_min = round(total_time_sec/60, 3)
         print('This measurement will take {} minutes.'.format(total_time_min))
 
     def ask_wait_at_maxvals(self):
@@ -134,7 +137,10 @@ class Gatesweep(Measurement):
         gc = []
         fig = plt.figure()
         ax = fig.add_subplot(211)
+        ax.xlabel('Meter Voltage [V]')
+        ax.ylabel('Resistance [Ohm]')
         ax1 = fig.add_subplot(212)
+        ax1.ylabel('Gatecurrent [A]')
         self.gate.set_gatevoltage(self.gate_voltage)
         while 1:
             # Set gatevoltage and measure values
@@ -147,17 +153,6 @@ class Gatesweep(Measurement):
             gatecurrent = self.gate.read_current()
 
             # Plot values in real time
-            # time.sleep(0.1)
-           # x.append(self.metervoltage)
-           # y.append(meterV)
-           # r.append(meterV/meterI)
-           # gc.append(gatecurrent)
-           # self.fast_plotter(x, r, ax_num=2, ax_pos=0,
-           #                   labels=("Gatevoltage [V]", "Resistance [Ohm]"))
-           # self.fast_plotter(x, gc, ax_num=2, ax_pos=1,
-                              #labels=("Gatevoltage [V]", "Gatecurrent [A]"))
-# Plot values in real time
-            # time.sleep(0.1)
             x.append(self.metervoltage)
             y.append(meterV)
             r.append(meterV/meterI)
@@ -170,7 +165,7 @@ class Gatesweep(Measurement):
             plt.pause(0.01)
             # Write values to file
             writedict = {
-                'Gatevoltage': self.metervoltage,
+                'Gatevoltage': self.gate_voltage,
                 'T': temp,
                 'V': meterV,
                 'I': meterI,

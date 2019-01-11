@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QPushButton
 
 version = sys.version[0]
 if version == '3':
-    if sys.platform == 'Windows':
+    if 'win' in sys.platform.lower():
         py_version = 'python'
     else:
         py_version = 'python3'
@@ -20,6 +20,7 @@ Programs = {
         'Gatesweep Lockin' : 'gatesweep_lockin.py',
         'Resistance vs time' : 'resist_temp_time.py',
         'Use Korad Heating' : 'korad_usage.py',
+        'Sweep Meter' : 'sweep_meter.py',
         }
 
 pwd = os.getcwd()
@@ -32,7 +33,6 @@ class MyWindow(QMainWindow):
         signal.signal(signal.SIGINT, signal.SIG_IGN)
         UI = uic.loadUi('Starter.ui', self)
         for button in UI.AllButtonsBox.findChildren(QPushButton):
-            print(button.text())
             button.released.connect(self.start_selection)
         self.show()
 
@@ -40,8 +40,10 @@ class MyWindow(QMainWindow):
         btn = self.sender()
         text = btn.text().strip('&')
         selection = str(Programs[text])
-        subprocess.call('start /wait python {}'.format(selection), shell=True)
-        #os.system('{} {}'.format(py_version, selection))
+        if 'win' in sys.platform.lower():
+            subprocess.call('start /wait python {}'.format(selection), shell=True)
+        else:
+            os.system('{} {}'.format(py_version, selection))
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
