@@ -1,6 +1,7 @@
 import os
 import sys
 import signal
+import subprocess
 from PyQt5 import QtGui, uic
 from PyQt5.QtWidgets import QMainWindow, QApplication
 
@@ -18,7 +19,6 @@ Programs = {
         'Gatesweep' : 'gatesweep.py',
         'Test_Button' : 't.py',
         }
-#subprocess.call('start /wait python bb.py', shell=True)
 
 pwd = os.getcwd()
 print(pwd)
@@ -41,7 +41,8 @@ class MyWindow(QMainWindow):
         btn = self.sender()
         text = btn.text().strip('&')
         selection = str(Programs[text])
-        os.system('{} {}'.format(py_version, selection))
+        subprocess.call('start /wait python {}'.format(selection), shell=True)
+        #os.system('{} {}'.format(py_version, selection))
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
