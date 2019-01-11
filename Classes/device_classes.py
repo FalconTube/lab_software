@@ -106,9 +106,9 @@ class Meter(Keithley):
                 ':OUTP OFF',
                 ':SOUR:FUNC CURR',  # Set current mode
                 ':SOUR:CURR:MODE FIX',
-                ':SOUR:CURR:RANG 0.000100',  # Set acceptable current range to 100uA
+                ':SOUR:CURR:RANG 0.0000100',  # Set acceptable current range to 100uA
                 ':SENS:FUNC "VOLT"',  # Set-up voltage measurement
-                ':SENS:VOLT:PROT 1.0',  # Set voltage compliance
+                ':SENS:VOLT:PROT 20.0',  # Set voltage compliance
                 # Turn on 4-wire sensing
                 ':SYST:RSEN {}'.format(self.fwire_str),
                 # Set current source to 10 uA
@@ -368,6 +368,9 @@ class Lockin():
     def auto_gain(self):
         self.lockin.write('AGAN')
 
+    def auto_gain(self):
+        print("Auto gaining... ")
+        gainer = self.lockin.write('AGAN')
 
 if __name__ == '__main__':
     print('\
