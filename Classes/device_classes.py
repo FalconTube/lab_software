@@ -84,14 +84,13 @@ class Gate(Keithley):
 
 
 class Meter(Keithley):
-    def __init__(self, gpibnum, curr_source=0.00001, four_wire=True,
-                 volt_source=0.0, set_source_voltage=False):
+    def __init__(self, gpibnum, source_val=0.00001, four_wire=True,
+                 set_source_voltage=False):
         if four_wire == True:
             self.fwire_str = 'ON'
         else:
             self.fwire_str = 'OFF'
-        self.curr_source = curr_source
-        self.volt_source = volt_source
+        self.source_val = source_val
         self.set_source_voltage = set_source_voltage
         self._initialize_keithley(gpibnum)
         self._initialize_meter()
@@ -112,7 +111,7 @@ class Meter(Keithley):
                 # Turn on 4-wire sensing
                 ':SYST:RSEN {}'.format(self.fwire_str),
                 # Set current source to 10 uA
-                ':SOUR:CURR:LEV {}'.format(self.curr_source),
+                ':SOUR:CURR:LEV {}'.format(self.source_val),
                 ':OUTP ON'
             ]
         else:
@@ -129,13 +128,13 @@ class Meter(Keithley):
                 # Set current compliance 100uA
                 # ':SENS:CURR:PROT {}'.format(self.compliance),
                 # Set voltage source to 0V
-                ':SOUR:VOLT:LEV {}'.format(self.volt_source),
+                ':SOUR:VOLT:LEV {}'.format(self.source_val),
                 ':OUTP ON'
             ]
 
         for i in meter_setup:
             self.meter.write(i)
-    
+
     def set_voltage(self, value):
         self.meter.write(':SOUR:VOLT:LEV {}'.format(value))
 

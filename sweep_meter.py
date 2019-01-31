@@ -11,7 +11,7 @@ class Gatesweep(Measurement):
         four_wire = str(input('Use 4-wire or 2-wire? [4/2]'))
         curr_source = float(input('Source current (default 1E-6): ' or float(1E-6)))
         fw = True if four_wire == '4' else False
-        self.meter = Meter(2, four_wire=fw, curr_source=curr_source)
+        self.meter = Meter(2, four_wire=fw, source_val=curr_source)
         self.lakeshore = Lakeshore()
         self.ask_savename()
         self.ask_parameters()
