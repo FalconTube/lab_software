@@ -12,7 +12,8 @@ class AML():
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
             bytesize=serial.EIGHTBITS,
-            writeTimeout=2,
+            write_timeout=3,
+            timeout=3,
         )
         #self.ser.timeout = 5
         self.v = visdom.Visdom()
@@ -39,7 +40,9 @@ class AML():
         self.ser.write(b'*S0\r\n')
         self.ser.flush()
         time.sleep(1)
-        answer = self._readline()
+        answer = self.ser.read_until()
+        answer = answer.decode('utf-8')
+        # answer = self._readline()
         # for i in range(6):
             # time.sleep(0.1)
             # if i == 0:
