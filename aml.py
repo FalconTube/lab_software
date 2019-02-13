@@ -17,7 +17,6 @@ class AML():
         self.ser.timeout=3
         self.ser.open()
         time.sleep(1)
-        #self.ser.timeout = 5
         self.v = visdom.Visdom()
         self.start_time = time.time()
 
@@ -31,32 +30,26 @@ class AML():
             if c:
                 line += c
                 if line[-leneol:] == eol:
-                    print('break EOL')
                     break
             else:
-                print('break no line')
                 break
         return bytes(line).decode('utf-8').strip()
     
     def read_value(self):
+        is_avail = False
         self.ser.flushInput()
         time.sleep(10)
         self.ser.write(b'*S0')
-        #print('wrote')
         self.ser.flush()
-        #print('flushed')
 
         time.sleep(1)
-        answer = self.ser.read_until()
-        answer = answer.decode('utf-8')
-        #print('answer {}'.format(answer))
-        # answer = self._readline()
-        # for i in range(6):
-            # time.sleep(0.1)
-            # if i == 0:
-                # answer = self._readline()
-            # else:
-                # garbage = self._readline()
+        while not is_avail:
+            answer = self.ser.read_until().decode('utf-8')
+            if not 'GI1' in answer:
+                is_avail = False
+            else:
+                is_avail = True
+        self.ser.flushOutput()
         return answer
 
 
