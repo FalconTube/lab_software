@@ -14,6 +14,7 @@ class AML():
             bytesize=serial.EIGHTBITS,
             timeout=5,
         )
+        self.v = visdom.Visdom()
         time.sleep(1)
         self.start_time = time.time()
 
@@ -36,17 +37,25 @@ class AML():
         self.ser.write(b'*S0')
         self.ser.flush()
         time.sleep(1)
-        answer = self._readline()
+        for i in range(6):
+            time.sleep(0.1)
+            if i == 0:
+                answer = self._readline()
+            else:
+                garbage = self._readline()
         return answer
 
 
     def convert_value(self, instring):
         out = instring.split('1A@')[-1].split(',')[0]
+        out = out.strip()
         return float(out)
     
     def init_vis_plot(self):
         curr_time = time.time() - self.start_time
-        self.pressure_plot = self.v.line(self.curr_pressure, X=np.array(curr_time))
+        y = np.array([self.curr_pressure])
+        self.pressure_plot = self.v.line(y, X=np.array([curr_time]),
+                opts=dict(ytickformat='%.1E'))
 
     def update_vis_plot(self):
         now = time.time() - self.start_time
@@ -59,9 +68,11 @@ class AML():
         self.curr_pressure = self.convert_value(first)
         self.init_vis_plot()
         while self.reading:
-            self.read_value()
+            time.sleep(1)
+            answer = self.read_value()
             if 'GI1' in answer:
                 self.curr_pressure = self.convert_value(answer)
+                self.update_vis_plot()
         self.ser.close()
 
 
