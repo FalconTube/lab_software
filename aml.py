@@ -12,15 +12,16 @@ class AML():
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
             bytesize=serial.EIGHTBITS,
-            timeout=5,
+            writeTimeout=2,
         )
+        #self.ser.timeout = 5
         self.v = visdom.Visdom()
         time.sleep(1)
         self.start_time = time.time()
 
 
     def _readline(self):
-        eol = b'\r\n'
+        eol = b'\n'
         leneol = len(eol)
         line = bytearray()
         while True:
@@ -34,15 +35,17 @@ class AML():
         return bytes(line).decode('utf-8').strip()
     
     def read_value(self):
-        self.ser.write(b'*S0')
+        time.sleep(3)
+        self.ser.write(b'*S0\r\n')
         self.ser.flush()
         time.sleep(1)
-        for i in range(6):
-            time.sleep(0.1)
-            if i == 0:
-                answer = self._readline()
-            else:
-                garbage = self._readline()
+        answer = self._readline()
+        # for i in range(6):
+            # time.sleep(0.1)
+            # if i == 0:
+                # answer = self._readline()
+            # else:
+                # garbage = self._readline()
         return answer
 
 
@@ -68,10 +71,10 @@ class AML():
         self.curr_pressure = self.convert_value(first)
         self.init_vis_plot()
         while self.reading:
-            time.sleep(1)
             answer = self.read_value()
             if 'GI1' in answer:
                 self.curr_pressure = self.convert_value(answer)
+                print(self.curr_pressure)
                 self.update_vis_plot()
         self.ser.close()
 
