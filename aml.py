@@ -6,18 +6,19 @@ import numpy as np
 class AML():
     def __init__(self):
         self.reading = True
-        self.ser = serial.Serial(
-            port='COM8',
-            baudrate=9600,
-            parity=serial.PARITY_NONE,
-            stopbits=serial.STOPBITS_ONE,
-            bytesize=serial.EIGHTBITS,
-            write_timeout=3,
-            timeout=3,
-        )
+        self.ser = serial.Serial()
+        time.sleep(1)
+        self.ser.port='COM8'
+        self.ser.baudrate=9600
+        self.ser.parity=serial.PARITY_NONE
+        self.ser.stopbits=serial.STOPBITS_ONE
+        self.ser.bytesize=serial.EIGHTBITS
+        self.ser.write_timeout=3
+        self.ser.timeout=3
+        self.ser.open()
+        time.sleep(1)
         #self.ser.timeout = 5
         self.v = visdom.Visdom()
-        time.sleep(1)
         self.start_time = time.time()
 
 
@@ -30,18 +31,25 @@ class AML():
             if c:
                 line += c
                 if line[-leneol:] == eol:
+                    print('break EOL')
                     break
             else:
+                print('break no line')
                 break
         return bytes(line).decode('utf-8').strip()
     
     def read_value(self):
-        time.sleep(3)
-        self.ser.write(b'*S0\r\n')
+        self.ser.flushInput()
+        time.sleep(10)
+        self.ser.write(b'*S0')
+        #print('wrote')
         self.ser.flush()
+        #print('flushed')
+
         time.sleep(1)
         answer = self.ser.read_until()
         answer = answer.decode('utf-8')
+        #print('answer {}'.format(answer))
         # answer = self._readline()
         # for i in range(6):
             # time.sleep(0.1)
