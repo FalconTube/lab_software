@@ -2,23 +2,31 @@ import time
 import serial
 import visdom
 import numpy as np
+import datetime
 
 class AML():
     def __init__(self):
         self.reading = True
         self.ser = serial.Serial()
+        self.init_port()
         time.sleep(1)
-        self.ser.port='COM8'
+        self.v = visdom.Visdom()
+        self.start_time = time.time()
+
+    def init_port(self):
+        self.ser.port='COM6'
         self.ser.baudrate=9600
         self.ser.parity=serial.PARITY_NONE
         self.ser.stopbits=serial.STOPBITS_ONE
         self.ser.bytesize=serial.EIGHTBITS
         self.ser.write_timeout=3
         self.ser.timeout=3
+        self.ser.rts=1,
+        self.ser.dtr=1,
         self.ser.open()
+        now = datetime.datetime.now()
+        print('Sucessfully opened connection! {}'.format(now))
         time.sleep(1)
-        self.v = visdom.Visdom()
-        self.start_time = time.time()
 
 
     def _readline(self):
@@ -36,20 +44,36 @@ class AML():
         return bytes(line).decode('utf-8').strip()
     
     def read_value(self):
+        connection_open = self.ser.is_open
+        while not connection_open:
+            time.sleep(60)
+            try:
+                self.init_port()
+            except:
+                print('Could not open connection to AML... {}'\
+                        .format(datetimme.datetime.now()))
+            connection_open = self.ser.is_open
         is_avail = False
-        self.ser.flushInput()
-        time.sleep(10)
+        self.ser.reset_input_buffer()
+        time.sleep(20)
         self.ser.write(b'*S0')
-        self.ser.flush()
+        #self.ser.flushOutput()
 
         time.sleep(1)
         while not is_avail:
-            answer = self.ser.read_until().decode('utf-8')
+            #answer = self.ser.read_until().decode('utf-8')
+            answer = self.ser.readline().decode('utf-8')
             if not 'GI1' in answer:
+                print('TIMED OUT! Restarting connection...')
+                self.ser.close()
+                time.sleep(1)
+                self.init_port()
+                self.ser.write(b'*S0')
+                time.sleep(1)
                 is_avail = False
             else:
                 is_avail = True
-        self.ser.flushOutput()
+        self.ser.reset_input_buffer()
         return answer
 
 
@@ -59,16 +83,28 @@ class AML():
         return float(out)
     
     def init_vis_plot(self):
-        curr_time = time.time() - self.start_time
+        curr_time =datetime.datetime.now()
+        #curr_time = time.time()
         y = np.array([self.curr_pressure])
         self.pressure_plot = self.v.line(y, X=np.array([curr_time]),
-                opts=dict(ytickformat='%.1E'))
+                opts={'layoutopts':{
+                    'plotly':
+                    {'xaxis':{
+                        'rangeslider' : {
+                            'visible' : 'True'},
+                    'type':'date'},
+                    'yaxis': {'tickformat':'.1e'},
+                    #'rangeslider':{'visible':'true'}
+                    }}}
+                    )
 
     def update_vis_plot(self):
-        now = time.time() - self.start_time
+        now =datetime.datetime.now()
+        #now = time.time() 
         y = np.array([self.curr_pressure])
         self.v.line(y, X=np.array([now]), win=self.pressure_plot,
-                update='append')
+                update='append',
+                    )
 
     def measure(self):
         first = self.read_value()
@@ -78,7 +114,6 @@ class AML():
             answer = self.read_value()
             if 'GI1' in answer:
                 self.curr_pressure = self.convert_value(answer)
-                print(self.curr_pressure)
                 self.update_vis_plot()
         self.ser.close()
 
