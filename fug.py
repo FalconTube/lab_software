@@ -8,8 +8,8 @@ from PyQt5.QtWidgets import (
     QLabel
     )
 from Classes.device_classes import *
-# from Classes.measurement_class import Measurement
-# from Classes.korad_class import KoradSerial
+#from Classes.measurement_class import Measurement
+from Classes.korad_class import KoradSerial
 
 
 class GrapheneGrowth(QMainWindow):
@@ -46,7 +46,7 @@ class GrapheneGrowth(QMainWindow):
         #self.UI.InitControllerButton.released.connect(self.init_controllers)
         self.UI.FlashButton.released.connect(self.use_flash)
         self.UI.AnnealButton.released.connect(self.use_anneal)
-        #self.UI.GrowButton.released.connect(self.use_grow)
+        self.UI.GrowButton.released.connect(self.use_grow)
         #self.UI.GrowButton.released.connect(self.go_emission)
 
     def ramp_to_current(self, target, time):
@@ -63,7 +63,7 @@ class GrapheneGrowth(QMainWindow):
         crystal = self.UI.CrystalBox.currentText()
         heatval = self.crystal_dict[crystal]
         print(heatval)
-        self.GrowCycle = GrowCycle(heatval)
+        self.GrowCycle = GrowCycle(10, 20 ,heatval)
         self.thread = QtCore.QThread(self)
         self.GrowCycle.grow_finished.connect(self.grow_callback)
         self.GrowCycle.moveToThread(self.thread)
@@ -108,8 +108,9 @@ class GrapheneGrowth(QMainWindow):
         self.UI.CycleLabel.setText(str(curr_cycle))
 
 
-class Heating:
+class Heating(QtCore.QObject):
     def __init__(self, target, hold_time):
+        QtCore.QObject.__init__(self)
         self.target = target
         self.hold_time = hold_time
         self.init_controllers()
@@ -118,8 +119,10 @@ class Heating:
         self.FUG = FUG()
         self.korad = KoradSerial('COM5')
         self.channel = self.korad.channels[0]
-        self.korad.output.off()
         self.channel.current = 0.0
+        self.korad.output.on()
+        self.FUG.output_on()
+        time.sleep(0.5)
 
     def close_controllers(self):
         self.channel.current = 0.0
@@ -140,11 +143,11 @@ class Heating:
 
     def emission_step(self, emission, target, perc, current, current_step):
         if not self.changed_korad:
-            if emission < percentage_neg(target, perc):
+            if emission < self.percentage_neg(target, perc):
                 current += current_step
                 self.korad.set_current(current)
                 self.changed_korad = True
-            if emission > percentage_pos(target, perc):
+            if emission > self.percentage_pos(target, perc):
                 current -= current_step
                 self.korad.set_current(current)
                 self.changed_korad = True
@@ -171,7 +174,7 @@ class Heating:
             passed = time.time() - start
             emission = self.FUG.read_emission()
             current = self.korad.get_current()
-            if in_tolerance(emission, self.target, tolerance=0.05):
+            if self.in_tolerance(emission, self.target, tolerance=0.02):
                 time.sleep(1)
                 continue
             for percentage, stepsize in korad_steps.items():
@@ -184,10 +187,12 @@ class Heating:
 
 class GrowCycle(Heating):
     ''' Grow for chosen Crystal '''
-    def __init__(self, target=10, duration=10, crystal):
-        super().__init__(self, target, duration)
+    grow_finished = QtCore.pyqtSignal(bool)
+    def __init__(self, target, duration, crystal):
+        super().__init__(target, duration)
+        self.target = target
+        self.duration = duration
         self.crystal = crystal
-        grow_finished = QtCore.pyqtSignal(bool)
 
     @QtCore.pyqtSlot()
     def do_grow(self):

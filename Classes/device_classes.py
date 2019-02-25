@@ -392,14 +392,26 @@ class FUG():
             sys.exit()
 
     def read_emission(self):
-        self.ser.write('>M1?')
+        self.ser.flushOutput()
+        self.ser.flushInput()
+        self.ser.write(b'>M1?\r\n')
         answer = self.ser.readline().decode('utf-8')
-        answer *= 1E3 # Conversion from A to mA
-        return answer
+        value = float(answer.split(':')[-1].strip())
+        value = round(value * 1E3, 1) # Conversion from A to mA
+        print(answer)
+        print(value)
+        #answer *= 1E3 
+        return value
+
+    def output_off(self):
+        self.ser.write(b'F0\r\n')
+
+    def output_on(self):
+        self.ser.write(b'F1\r\n')
 
     def close(self):
-        self.ser.write('F0')
-        ser.ser.close()
+        self.ser.write(b'F0\r\n')
+        self.ser.close()
 
 if __name__ == '__main__':
     print('\

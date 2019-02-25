@@ -298,7 +298,7 @@ class KoradSerial(object):
         return False
 
     def set_current(self, value):
-        def round_value(self, value):
+        def round_value(value):
             if value >= 1.0:
                 value = round(value, 3)  # Max sensitivity
             else:
