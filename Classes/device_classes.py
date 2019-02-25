@@ -396,6 +396,9 @@ class FUG():
         answer = self.ser.readline().decode('utf-8')
         return answer
 
+    def close(self):
+        ser.ser.close()
+
 if __name__ == '__main__':
     print('\
     This is the file holding the Device classes.\

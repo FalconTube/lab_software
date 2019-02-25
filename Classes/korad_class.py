@@ -298,8 +298,18 @@ class KoradSerial(object):
         return False
 
     def set_current(self, value):
+        def round_value(self, value):
+            if value >= 1.0:
+                value = round(value, 3)  # Max sensitivity
+            else:
+                value = round(value, 4)  # Max sensisivity
+            return value
         amp_chann = self.channels[0]
-        amp_chann.current = value
+        amp_chann.current = round_value(value)
+
+    def get_current(self):
+        amp_chann = self.channels[0]
+        return amp_chann.current
 
 
     # ################################################################################
