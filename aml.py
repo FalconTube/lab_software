@@ -14,7 +14,7 @@ class AML():
         self.start_time = time.time()
 
     def init_port(self):
-        self.ser.port='COM6'
+        self.ser.port='COM9'
         self.ser.baudrate=9600
         self.ser.parity=serial.PARITY_NONE
         self.ser.stopbits=serial.STOPBITS_ONE
@@ -113,8 +113,11 @@ class AML():
         while self.reading:
             answer = self.read_value()
             if 'GI1' in answer:
-                self.curr_pressure = self.convert_value(answer)
-                self.update_vis_plot()
+                try:
+                    self.curr_pressure = self.convert_value(answer)
+                    self.update_vis_plot()
+                except:
+                    time.sleep(60)
         self.ser.close()
 
 
