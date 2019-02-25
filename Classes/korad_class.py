@@ -227,7 +227,11 @@ class KoradSerial(object):
             super(KoradSerial.Serial, self).__init__()
 
             self.debug = debug
-            self.port = serial.Serial(port, 9600, timeout=1)
+            try:
+                self.port = serial.Serial(port, 9600, timeout=1)
+                print('Successfully opened Korad! ')
+            except:
+                print('Could not open Korad. Exiting... ')
 
         def read_character(self):
             c = self.port.read(1).decode('ascii')
@@ -292,6 +296,21 @@ class KoradSerial(object):
         """
         self.close()
         return False
+
+    def set_current(self, value):
+        def round_value(self, value):
+            if value >= 1.0:
+                value = round(value, 3)  # Max sensitivity
+            else:
+                value = round(value, 4)  # Max sensisivity
+            return value
+        amp_chann = self.channels[0]
+        amp_chann.current = round_value(value)
+
+    def get_current(self):
+        amp_chann = self.channels[0]
+        return amp_chann.current
+
 
     # ################################################################################
     # Serial operations

@@ -5,13 +5,11 @@ import visa  # for GPIB communication
 import time  # for loop over time
 import numpy as np
 import os  # import OS
-import tkinter
-import tkinter.messagebox as mbox
 import matplotlib.pyplot as plt
 import serial
 import weakref
 
-rm = visa.ResourceManager()
+rm = visa.ResourceManager('@py')
 
 
 class Keithley():
@@ -370,6 +368,36 @@ class Lockin():
     def auto_gain(self):
         print("Auto gaining... ")
         gainer = self.lockin.write('AGAN')
+
+
+class FUG():
+    def __init__(self):
+        try:
+            self.ser = serial.Serial(
+                port='COM7',
+                baudrate=9600,
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE,
+                bytesize=serial.EIGHTBITS,
+                timeout=1,
+                rtscts=False,
+                dsrdtr=False
+            )
+            time.sleep(1)
+            self.ser.flushOutput()
+            self.ser.flushInput()
+            print('Successfully opened FUG! ')
+        except:
+            print('Could not open FUG. Exiting... ')
+            sys.exit()
+
+    def read_emission(self):
+        self.ser.write('>M1?')
+        answer = self.ser.readline().decode('utf-8')
+        return answer
+
+    def close(self):
+        ser.ser.close()
 
 if __name__ == '__main__':
     print('\
