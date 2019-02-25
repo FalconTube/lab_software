@@ -77,7 +77,8 @@ class GrapheneGrowth(QMainWindow):
         self.UI.StatusLabel.setStyleSheet('color: black')
 
     def use_anneal(self):
-        self.Annealing = Annealing()
+        target = self.UI.AnnealValueBox.value()
+        self.Annealing = Annealing(target, 15*60, sleep_time=0.5)
         self.thread = QtCore.QThread(self)
         self.Annealing.anneal_finished.connect(self.anneal_callback)
         self.Annealing.moveToThread(self.thread)
@@ -91,7 +92,8 @@ class GrapheneGrowth(QMainWindow):
         self.UI.StatusLabel.setStyleSheet('color: black')
 
     def use_flash(self):
-        self.Flashing = Flashing()
+        target = self.UI.FlashValueBox.value()
+        self.Flashing = Flashing(target, 10, sleep_time=0.1)
         self.thread = QtCore.QThread(self)
         self.Flashing.flash_finished.connect(self.flash_callback)
         self.Flashing.moveToThread(self.thread)
@@ -109,10 +111,11 @@ class GrapheneGrowth(QMainWindow):
 
 
 class Heating(QtCore.QObject):
-    def __init__(self, target, hold_time):
+    def __init__(self, target, hold_time, sleep_time=0.3):
         QtCore.QObject.__init__(self)
         self.target = target
         self.hold_time = hold_time
+        self.sleep_time = sleep_time
         self.init_controllers()
 
     def init_controllers(self):
@@ -154,11 +157,6 @@ class Heating(QtCore.QObject):
 
     def run(self):
         ''' Starts the actual heating to given target '''
-
-        # Declare heating variables
-        #self.target = 50
-        #tolerance = 0.1
-        #self.duration = 2
         # Declare heating steps
         korad_steps = {
                 0.50 : 0.1,
@@ -169,29 +167,34 @@ class Heating(QtCore.QObject):
                 }
         start = time.time()
         passed = time.time() - start
+        reached_target = False
         while passed < self.duration:
             self.changed_korad = False
             passed = time.time() - start
             emission = self.FUG.read_emission()
             current = self.korad.get_current()
-            if self.in_tolerance(emission, self.target, tolerance=0.02):
+            if self.in_tolerance(emission, self.target, tolerance=0.01):
+                reached_target = True
                 time.sleep(1)
                 continue
+            # if not at target
             for percentage, stepsize in korad_steps.items():
                 if not self.changed_korad:
                     self.emission_step(emission, self.target, percentage, current,
                             stepsize)
-            time.sleep(0.2)
+            time.sleep(self.sleep_time)
+            if not reached_target:
+                start = time.time()
         self.close_controllers()
 
 
 class GrowCycle(Heating):
     ''' Grow for chosen Crystal '''
     grow_finished = QtCore.pyqtSignal(bool)
-    def __init__(self, target, duration, crystal):
+    def __init__(self, target, duration, sleep_time=0.5, crystal):
         super().__init__(target, duration)
-        self.target = target
-        self.duration = duration
+        # self.target = target
+        # self.duration = duration
         self.crystal = crystal
 
     @QtCore.pyqtSlot()
@@ -199,26 +202,28 @@ class GrowCycle(Heating):
         self.run()
         self.grow_finished.emit(True)
 
-class Annealing(QtCore.QObject):
+class Annealing(Heating):
     ''' Perform annealing procedure heating  '''
     anneal_finished = QtCore.pyqtSignal(bool)
+    def __init__(self, target, duration, sleep_time):
+        super().__init__(target, duration, sleep_time)
+        # self.target = target
+        # self.duration = duration
 
     @QtCore.pyqtSlot()
     def do_anneal(self):
-        for i in range(2):
-            time.sleep(1)
-            print('{}'.format(i))
+        self.run()
         self.anneal_finished.emit(True)
 
-class Flashing(QtCore.QObject):
+class Flashing(Heating):
     ''' Increase to flash value und hold for 10 sec '''
     flash_finished = QtCore.pyqtSignal(bool)
+    def __init__(self, target, duration, sleep_time):
+        super().__init__(target, duration, sleep_time)
 
     @QtCore.pyqtSlot()
     def do_flash(self):
-        for i in range(2):
-            time.sleep(1)
-            print('{}'.format(i))
+        self.run()
         self.flash_finished.emit(True)
     # Set up PID
     # target = self.UI.FlashValueBox.value()
