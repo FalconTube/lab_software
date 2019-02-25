@@ -374,7 +374,7 @@ class FUG():
     def __init__(self):
         try:
             self.ser = serial.Serial(
-                port='COM7',
+                port='COM10',
                 baudrate=9600,
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
@@ -394,9 +394,11 @@ class FUG():
     def read_emission(self):
         self.ser.write('>M1?')
         answer = self.ser.readline().decode('utf-8')
+        answer *= 1E3 # Conversion from A to mA
         return answer
 
     def close(self):
+        self.ser.write('F0')
         ser.ser.close()
 
 if __name__ == '__main__':

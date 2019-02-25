@@ -184,7 +184,7 @@ class Heating:
 
 class GrowCycle(Heating):
     ''' Grow for chosen Crystal '''
-    def __init__(self, target, duration, crystal):
+    def __init__(self, target=10, duration=10, crystal):
         super().__init__(self, target, duration)
         self.crystal = crystal
         grow_finished = QtCore.pyqtSignal(bool)
