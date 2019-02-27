@@ -138,7 +138,7 @@ class Heating(QtCore.QObject):
         QtCore.QObject.__init__(self)
         self.UI = uic.loadUi('GrapheneUI.ui', self)
         self.target = target
-        self.hold_time = hold_time
+        self.duration = hold_time
         self.sleep_time = sleep_time
         self.plot = plot
         self.init_controllers()
@@ -164,6 +164,7 @@ class Heating(QtCore.QObject):
     def in_tolerance(self, value, target, tolerance=0.01):
         lower = target - target * tolerance
         upper = target + target * tolerance
+        print(lower, value, upper)
         return True if lower <= value <= upper else False
 
     def percentage_pos(self, value, perc):
@@ -173,6 +174,7 @@ class Heating(QtCore.QObject):
         return value - value * perc
 
     def emission_step(self, emission, target, perc, current, current_step):
+        print('Changing with stepsize {}'.format(current_step))
         if not self.changed_korad:
             if emission < self.percentage_neg(target, perc):
                 current += current_step
@@ -192,11 +194,11 @@ class Heating(QtCore.QObject):
         xstart = time.time()
         # Declare heating steps
         korad_steps = {
-                0.50 : 0.1,
-                0.30 : 0.05,
-                0.20 : 0.03,
+                0.50 : 0.05,
+                0.30 : 0.03,
+                0.20 : 0.02,
                 0.10 : 0.01,
-                0.05 : 0.005,
+                0.05 : 0.003,
                 }
 
         start = time.time()
@@ -213,6 +215,7 @@ class Heating(QtCore.QObject):
             ykorad.append(current)
             if self.in_tolerance(emission, self.target, tolerance=0.01):
                 reached_target = True
+                self.plot.setData(xdat, yemis)
                 time.sleep(1)
                 continue
             # if not at target
