@@ -1,5 +1,6 @@
 import sys
 import time
+import pyqtgraph as pg
 import Classes.PID
 from PyQt5 import QtCore, uic
 from PyQt5.QtWidgets import (
@@ -19,6 +20,7 @@ class GrapheneGrowth(QMainWindow):
         self.init_box_values()
         self.setup_buttons()
         self.init_crystal_values()
+        self.init_graph()
         self.show()
 
     def init_crystal_values(self):
@@ -35,6 +37,22 @@ class GrapheneGrowth(QMainWindow):
         self.UI.AnnealValueBox.setValue(80)
         self.UI.AnnealValueBox.setMaximum(200)
 
+    def init_graph(self):
+        self.graph = self.UI.EmissionView
+        p = pg.mkPen(color=(63, 117, 204), width=2)
+        self.plot = self.graph.plot(pen=p)
+        self.graph.setAutoVisible(y=True)
+        self.graph.enableAutoRange('x')
+        self.graph.enableAutoRange('y')
+        #self.graph.showGrid(y=True,x=True)
+        self.graph.showAxis("right")
+        self.graph.getAxis("right").tickStrings = lambda x,y,z: ["" for value in x]
+        self.graph.showAxis("top")
+        self.graph.getAxis("top").tickStrings = lambda x,y,z: ["" for value in x]
+        self.graph.setTitle("Emission Current")
+        self.graph.setLabel("left", "Current [mA]")
+        self.graph.setLabel("bottom", "Passed time [s]")
+
     # def init_controllers(self):
         # self.FUG = FUG()
         # self.korad = KoradSerial('COM5')
@@ -43,7 +61,6 @@ class GrapheneGrowth(QMainWindow):
         # self.channel.current = 0.0
 
     def setup_buttons(self):
-        #self.UI.InitControllerButton.released.connect(self.init_controllers)
         self.UI.FlashButton.released.connect(self.use_flash)
         self.UI.AnnealButton.released.connect(self.use_anneal)
         self.UI.GrowButton.released.connect(self.use_grow)
@@ -63,7 +80,7 @@ class GrapheneGrowth(QMainWindow):
         crystal = self.UI.CrystalBox.currentText()
         heatval = self.crystal_dict[crystal]
         print(heatval)
-        self.GrowCycle = GrowCycle(10, 20 ,heatval)
+        self.GrowCycle = GrowCycle(10, 20, heatval, self.plot)
         self.thread = QtCore.QThread(self)
         self.GrowCycle.grow_finished.connect(self.grow_callback)
         self.GrowCycle.moveToThread(self.thread)
@@ -78,7 +95,7 @@ class GrapheneGrowth(QMainWindow):
 
     def use_anneal(self):
         target = self.UI.AnnealValueBox.value()
-        self.Annealing = Annealing(target, 15*60, sleep_time=0.5)
+        self.Annealing = Annealing(target, 15*60, 0.5, self.plot)
         self.thread = QtCore.QThread(self)
         self.Annealing.anneal_finished.connect(self.anneal_callback)
         self.Annealing.moveToThread(self.thread)
@@ -93,7 +110,7 @@ class GrapheneGrowth(QMainWindow):
 
     def use_flash(self):
         target = self.UI.FlashValueBox.value()
-        self.Flashing = Flashing(target, 10, sleep_time=0.1)
+        self.Flashing = Flashing(target, 10, 0.1, self.plot)
         self.thread = QtCore.QThread(self)
         self.Flashing.flash_finished.connect(self.flash_callback)
         self.Flashing.moveToThread(self.thread)
@@ -111,11 +128,12 @@ class GrapheneGrowth(QMainWindow):
 
 
 class Heating(QtCore.QObject):
-    def __init__(self, target, hold_time, sleep_time=0.3):
+    def __init__(self, target, hold_time, sleep_time=0.3, plot=None):
         QtCore.QObject.__init__(self)
         self.target = target
         self.hold_time = hold_time
         self.sleep_time = sleep_time
+        self.plot = plot
         self.init_controllers()
 
     def init_controllers(self):
@@ -157,6 +175,11 @@ class Heating(QtCore.QObject):
 
     def run(self):
         ''' Starts the actual heating to given target '''
+        # Plotting
+        xdat = []
+        yemis = []
+        ykorad = []
+        xstart = time.time()
         # Declare heating steps
         korad_steps = {
                 0.50 : 0.1,
@@ -165,14 +188,19 @@ class Heating(QtCore.QObject):
                 0.10 : 0.01,
                 0.05 : 0.005,
                 }
+
         start = time.time()
         passed = time.time() - start
         reached_target = False
+        self.korad.set_current(2.2)
         while passed < self.duration:
             self.changed_korad = False
             passed = time.time() - start
             emission = self.FUG.read_emission()
             current = self.korad.get_current()
+            xdat.append(time.time() - xstart)
+            yemis.append(emission)
+            ykorad.append(current)
             if self.in_tolerance(emission, self.target, tolerance=0.01):
                 reached_target = True
                 time.sleep(1)
@@ -185,14 +213,15 @@ class Heating(QtCore.QObject):
             time.sleep(self.sleep_time)
             if not reached_target:
                 start = time.time()
+            self.plot.setData(xdat, yemis)
         self.close_controllers()
 
 
 class GrowCycle(Heating):
     ''' Grow for chosen Crystal '''
     grow_finished = QtCore.pyqtSignal(bool)
-    def __init__(self, target, duration, sleep_time=0.5, crystal):
-        super().__init__(target, duration)
+    def __init__(self, target, duration, sleep_time, plot, crystal):
+        super().__init__(target, duration, sleep_time, plot)
         # self.target = target
         # self.duration = duration
         self.crystal = crystal
@@ -205,8 +234,8 @@ class GrowCycle(Heating):
 class Annealing(Heating):
     ''' Perform annealing procedure heating  '''
     anneal_finished = QtCore.pyqtSignal(bool)
-    def __init__(self, target, duration, sleep_time):
-        super().__init__(target, duration, sleep_time)
+    def __init__(self, target, duration, sleep_time, plot):
+        super().__init__(target, duration, sleep_time, plot)
         # self.target = target
         # self.duration = duration
 
@@ -218,31 +247,13 @@ class Annealing(Heating):
 class Flashing(Heating):
     ''' Increase to flash value und hold for 10 sec '''
     flash_finished = QtCore.pyqtSignal(bool)
-    def __init__(self, target, duration, sleep_time):
-        super().__init__(target, duration, sleep_time)
+    def __init__(self, target, duration, sleep_time, plot):
+        super().__init__(target, duration, sleep_time, plot)
 
     @QtCore.pyqtSlot()
     def do_flash(self):
         self.run()
         self.flash_finished.emit(True)
-    # Set up PID
-    # target = self.UI.FlashValueBox.value()
-    # self.flash_pid.SetPoint(target)
-    # self.flash_pid.setSampleTime(0.5)
-    # # Initial current of Korad
-    # self.korad.set_current(3.3)
-    # self.korad.output.on()
-    # time.sleep(0.3)
-    # emission = self.FUG.read_emission()
-    # pid.update(emission)
-    # target_pwm = pid.output
-    # print('emission {}, target pwm {}'.format(emission, target_pwm))
-    # start_time = time.time()
-    # curr_time = time.time() - start_time
-    # while curr_time < 10:
-        # curr_time = time.time() - start_time
-        # self.flash_pid()
-        # pass
 
 # for _ in range(60):
     # time.sleep(1)
