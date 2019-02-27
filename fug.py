@@ -37,6 +37,12 @@ class GrapheneGrowth(QMainWindow):
         self.UI.AnnealValueBox.setValue(80)
         self.UI.AnnealValueBox.setMaximum(200)
 
+    def init_port_selection(self):
+        ports = serial.tools.list_ports_windows.comports()
+        for port in ports:
+            self.UI.FugPortBox.addItem(port)
+            self.UI.KoradPortBox.addItem(port)
+
     def init_graph(self):
         self.graph = self.UI.EmissionView
         p = pg.mkPen(color=(63, 117, 204), width=2)
@@ -130,6 +136,7 @@ class GrapheneGrowth(QMainWindow):
 class Heating(QtCore.QObject):
     def __init__(self, target, hold_time, sleep_time=0.3, plot=None):
         QtCore.QObject.__init__(self)
+        self.UI = uic.loadUi('GrapheneUI.ui', self)
         self.target = target
         self.hold_time = hold_time
         self.sleep_time = sleep_time
@@ -137,8 +144,11 @@ class Heating(QtCore.QObject):
         self.init_controllers()
 
     def init_controllers(self):
-        self.FUG = FUG()
-        self.korad = KoradSerial('COM5')
+        fug_port = self.UI.FugPortBox.currentText()
+        korad_port = self.UI.KoradPortBox.currentText()
+        print(fug_port, korad_port)
+        self.FUG = FUG(fug_port)
+        self.korad = KoradSerial(korad_port)
         self.channel = self.korad.channels[0]
         self.channel.current = 0.0
         self.korad.output.on()
