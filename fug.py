@@ -21,6 +21,7 @@ class GrapheneGrowth(QMainWindow):
         self.setup_buttons()
         self.init_crystal_values()
         self.init_graph()
+        self.init_port_selection()
         self.show()
 
     def init_crystal_values(self):
@@ -38,10 +39,11 @@ class GrapheneGrowth(QMainWindow):
         self.UI.AnnealValueBox.setMaximum(200)
 
     def init_port_selection(self):
-        ports = serial.tools.list_ports_windows.comports()
+        ports = serial.tools.list_ports.comports()
         for port in ports:
-            self.UI.FugPortBox.addItem(port)
-            self.UI.KoradPortBox.addItem(port)
+            device = port.device
+            self.UI.FugPortBox.addItem(device)
+            self.UI.KoradPortBox.addItem(device)
 
     def init_graph(self):
         self.graph = self.UI.EmissionView
