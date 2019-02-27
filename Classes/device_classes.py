@@ -374,7 +374,7 @@ class FUG():
     def __init__(self):
         try:
             self.ser = serial.Serial(
-                port='COM10',
+                port='COM13',
                 baudrate=9600,
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
@@ -391,6 +391,14 @@ class FUG():
             print('Could not open FUG. Exiting... ')
             sys.exit()
 
+    def set_maxima(self):
+        self.ser.flushOutput()
+        self.ser.flushInput()
+        self.ser.write(b'>S0 1000')
+        self.ser.flushOutput()
+        self.ser.flushInput()
+        self.ser.write(b'>S1 0.14')
+
     def read_emission(self):
         self.ser.flushOutput()
         self.ser.flushInput()
@@ -398,9 +406,6 @@ class FUG():
         answer = self.ser.readline().decode('utf-8')
         value = float(answer.split(':')[-1].strip())
         value = round(value * 1E3, 1) # Conversion from A to mA
-        print(answer)
-        print(value)
-        #answer *= 1E3 
         return value
 
     def output_off(self):
