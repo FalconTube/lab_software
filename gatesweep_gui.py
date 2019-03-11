@@ -42,12 +42,26 @@ class MainWindow(QMainWindow):
 
     def init_port_selection(self):
         rm = visa.ResourceManager()
-        for port in rm:
+        ports = rm.list_resources()
+        for port inports:
             if 'GP' in port:
                 add = port.split('::')[1]
                 self.UI.GatePortBox.addItem(add)
                 self.UI.KMeterPortBox.addItem(add)
                 self.UI.LMeterPortBox.addItem(add)
+
+        # Set standard values
+        gateind = self.UI.GatePortBox.findText('1')
+        if gateind != -1:
+            self.UI.GatePortBox.setCurrentIndex(gateind)
+
+        lockinind = self.UI.LMeterPortBox.findText('8')
+        if lockinind != -1:
+            self.UI.GatePortBox.setCurrentIndex(lockinind)
+
+        kmeterind = self.UI.KMeterPortBox.findText('2')
+        if kmeterind != -1:
+            self.UI.GatePortBox.setCurrentIndex(kmeterind)
 
     def init_connect_buttons(self):
         self.UI.GateConnectButton.released.connect(self.init_gate)
