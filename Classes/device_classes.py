@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import serial
 import weakref
 
-rm = visa.ResourceManager('@py')
 
 
 class Keithley():
