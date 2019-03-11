@@ -14,7 +14,7 @@ from Classes.measurement_class import Measurement
 class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
-        self.UI = uic.loadUi('Gatesweep.ui')
+        self.UI = uic.loadUi('Gatesweep.ui', self)
         #self.init_port_selection()
         #self.init_connect_buttons()
         #GS = Gatesweep(Measurement)
