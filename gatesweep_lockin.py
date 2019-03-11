@@ -8,12 +8,12 @@ class Gatesweep(Measurement):
     def __init__(self):
         print('using lockin')
 
+        self.meter = Lockin()
         self.gate = Gate(2)
         # self.meter = Meter(2, four_wire=False, curr_source=1E-6)
 
         ### WRITE LOCKING GPIB HERE ###
 
-        self.meter = Lockin()
         print('using lockin')
 
         ### WRITE LOCKING GPIB HERE ###

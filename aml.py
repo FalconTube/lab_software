@@ -93,8 +93,8 @@ class AML():
                 opts={'layoutopts':{
                     'plotly':
                     {'xaxis':{
-                        'rangeslider' : {
-                            'visible' : 'True'},
+                        # 'rangeslider' : {
+                            # 'visible' : 'False'},
                     'type':'date'},
                     'yaxis': {'tickformat':'.1e'},
                     #'rangeslider':{'visible':'true'}
