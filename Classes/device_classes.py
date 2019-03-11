@@ -228,6 +228,7 @@ class InficonSQM160(object):
 
 class Lockin():
     def __init__(self, gpib_number=8):
+        rm = visa.ResourceManager()
         self.lockin = rm.open_resource("GPIB::{}".format(gpib_number))
         # self.lockin.write("")
         self.lockin.write('OUTX 1')  # Sets device to talk over GPIB

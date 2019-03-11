@@ -14,7 +14,7 @@ class AML():
         self.start_time = time.time()
 
     def init_port(self):
-        self.ser.port='COM9'
+        self.ser.port='COM12'
         self.ser.baudrate=9600
         self.ser.parity=serial.PARITY_NONE
         self.ser.stopbits=serial.STOPBITS_ONE
@@ -62,7 +62,10 @@ class AML():
         time.sleep(1)
         while not is_avail:
             #answer = self.ser.read_until().decode('utf-8')
-            answer = self.ser.readline().decode('utf-8')
+            try:
+                answer = self.ser.readline().decode('utf-8')
+            except:
+                answer = ''
             if not 'GI1' in answer:
                 print('TIMED OUT! Restarting connection...')
                 self.ser.close()
@@ -90,8 +93,8 @@ class AML():
                 opts={'layoutopts':{
                     'plotly':
                     {'xaxis':{
-                        'rangeslider' : {
-                            'visible' : 'True'},
+                        # 'rangeslider' : {
+                            # 'visible' : 'False'},
                     'type':'date'},
                     'yaxis': {'tickformat':'.1e'},
                     #'rangeslider':{'visible':'true'}
