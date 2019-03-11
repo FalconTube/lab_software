@@ -41,11 +41,13 @@ class MainWindow(QMainWindow):
         self.savename = QFileDialog.getSaveFileName(self, 'Choose Savename')
 
     def init_port_selection(self):
-        ports = serial.tools.list_ports.comports()
-        for port in ports:
-            self.UI.GatePortBox.addItem(port.device)
-            self.UI.KMeterPortBox.addItem(port.device)
-            self.UI.LMeterPortBox.addItem(port.device)
+        rm = visa.ResourceManager()
+        for port in rm:
+            if 'GP' in port:
+                add = port.split('::')[1]
+                self.UI.GatePortBox.addItem(add)
+                self.UI.KMeterPortBox.addItem(add)
+                self.UI.LMeterPortBox.addItem(add)
 
     def init_connect_buttons(self):
         self.UI.GateConnectButton.released.connect(self.init_gate)

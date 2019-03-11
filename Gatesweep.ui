@@ -300,7 +300,7 @@
           <item row="0" column="0">
            <widget class="QLabel" name="label_6">
             <property name="text">
-             <string>Port</string>
+             <string>GPIB</string>
             </property>
            </widget>
           </item>
@@ -327,7 +327,7 @@
           <item row="0" column="0">
            <widget class="QLabel" name="label_8">
             <property name="text">
-             <string>Port</string>
+             <string>GPIB</string>
             </property>
            </widget>
           </item>
@@ -397,7 +397,7 @@
           <item row="0" column="0">
            <widget class="QLabel" name="label_9">
             <property name="text">
-             <string>Port</string>
+             <string>GPIB</string>
             </property>
            </widget>
           </item>
