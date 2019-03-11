@@ -15,8 +15,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         self.UI = uic.loadUi('Gatesweep.ui', self)
-        #self.init_port_selection()
-        #self.init_connect_buttons()
+        self.init_port_selection()
+        self.init_connect_buttons()
         #GS = Gatesweep(Measurement)
         self.show()
 
@@ -43,7 +43,8 @@ class MainWindow(QMainWindow):
     def init_port_selection(self):
         rm = visa.ResourceManager()
         ports = rm.list_resources()
-        for port inports:
+        print(ports)
+        for port in ports:
             if 'GP' in port:
                 add = port.split('::')[1]
                 self.UI.GatePortBox.addItem(add)
@@ -57,11 +58,11 @@ class MainWindow(QMainWindow):
 
         lockinind = self.UI.LMeterPortBox.findText('8')
         if lockinind != -1:
-            self.UI.GatePortBox.setCurrentIndex(lockinind)
+            self.UI.LMeterPortBox.setCurrentIndex(lockinind)
 
         kmeterind = self.UI.KMeterPortBox.findText('2')
         if kmeterind != -1:
-            self.UI.GatePortBox.setCurrentIndex(kmeterind)
+            self.UI.KMeterPortBox.setCurrentIndex(kmeterind)
 
     def init_connect_buttons(self):
         self.UI.GateConnectButton.released.connect(self.init_gate)
