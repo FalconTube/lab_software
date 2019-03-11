@@ -7,6 +7,7 @@ import numpy as np
 import os  # import OS
 import matplotlib.pyplot as plt
 import serial
+import serial.tools.list_ports
 import weakref
 
 

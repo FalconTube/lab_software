@@ -1,5 +1,6 @@
 # __author__ = Yannic Falke
 
+import sys
 import pyqtgraph as pg
 from PyQt5 import QtCore, uic
 from PyQt5.QtWidgets import (
@@ -14,14 +15,14 @@ class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         self.UI = uic.loadUi('Gatesweep.ui')
-        self.init_port_selection()
-        self.init_connect_buttons()
+        #self.init_port_selection()
+        #self.init_connect_buttons()
         #GS = Gatesweep(Measurement)
         self.show()
 
     def init_save(self):
         ''' Connects save button and sets default savename '''
-        self.UI.SavenameButton.connect(self.choose_savename)
+        self.UI.SavenameButton.released.connect(self.choose_savename)
         savefolder = 'testfolder'
         os.chdir(savefolder)
         savename = 'testfile'
@@ -40,17 +41,16 @@ class MainWindow(QMainWindow):
         self.savename = QFileDialog.getSaveFileName(self, 'Choose Savename')
 
     def init_port_selection(self):
-        ports = serial.tools.list_ports_windows.comports()
-        #ports = serial.list_ports
+        ports = serial.tools.list_ports.comports()
         for port in ports:
-            self.UI.GatePortBox.addItem(port)
-            self.UI.KMeterPortBox.addItem(port)
-            self.UI.LMeterPortBox.addItem(port)
+            self.UI.GatePortBox.addItem(port.device)
+            self.UI.KMeterPortBox.addItem(port.device)
+            self.UI.LMeterPortBox.addItem(port.device)
 
     def init_connect_buttons(self):
-        self.UI.GateConnectButton.connect(self.init_gate)
-        self.UI.KMeterConnectButton.connect(self.init_kmeter)
-        self.UI.LMeterConnectButton.connect(self.init_lmeter)
+        self.UI.GateConnectButton.released.connect(self.init_gate)
+        self.UI.KMeterConnectButton.released.connect(self.init_kmeter)
+        self.UI.LMeterConnectButton.released.connect(self.init_lmeter)
 
     def label_connected(self, label):
         label.setText('Connected')
@@ -99,7 +99,7 @@ class MainWindow(QMainWindow):
             self.label_failed(self.UI.LMeterLabel)
 
     def init_gs_buttons(self):
-        self.UI.StartGSButton.connect(self.start_gatesweep)
+        self.UI.StartGSButton.released.connect(self.start_gatesweep)
 
     def start_gatesweep(self):
         minvoltage = self.UI.MingateBox.value()

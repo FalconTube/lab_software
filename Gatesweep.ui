@@ -50,7 +50,7 @@
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox">
+           <widget class="QDoubleSpinBox" name="MinGateBox">
             <property name="decimals">
              <number>0</number>
             </property>
@@ -60,7 +60,7 @@
            </widget>
           </item>
           <item row="3" column="1">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_4">
+           <widget class="QDoubleSpinBox" name="WaittimeBox">
             <property name="decimals">
              <number>1</number>
             </property>
@@ -76,7 +76,7 @@
            </widget>
           </item>
           <item row="1" column="1">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_2">
+           <widget class="QDoubleSpinBox" name="MaxGateBox">
             <property name="decimals">
              <number>0</number>
             </property>
@@ -92,7 +92,7 @@
            </widget>
           </item>
           <item row="2" column="1">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_3">
+           <widget class="QDoubleSpinBox" name="StepsizeBox">
             <property name="decimals">
              <number>1</number>
             </property>
@@ -129,7 +129,7 @@
            </widget>
           </item>
           <item row="4" column="1">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_5">
+           <widget class="QDoubleSpinBox" name="WaitmaxBox">
             <property name="decimals">
              <number>1</number>
             </property>
