@@ -231,6 +231,7 @@ class Lockin():
     def __init__(self, gpib_number=8):
         rm = visa.ResourceManager()
         self.lockin = rm.open_resource("GPIB::{}".format(gpib_number))
+        print('Initialized Lockin on GPIB::{}'.format(gpib_number))
         # self.lockin.write("")
         self.lockin.write('OUTX 1')  # Sets device to talk over GPIB
         self.tauset = {
@@ -369,6 +370,9 @@ class Lockin():
     def auto_gain(self):
         print("Auto gaining... ")
         gainer = self.lockin.write('AGAN')
+
+    def close(self):
+        self.lockin.close()
 
 
 class FUG():

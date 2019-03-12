@@ -43,7 +43,6 @@ class MainWindow(QMainWindow):
     def init_port_selection(self):
         rm = visa.ResourceManager()
         ports = rm.list_resources()
-        print(ports)
         for port in ports:
             if 'GP' in port:
                 add = port.split('::')[1]
