@@ -37,6 +37,8 @@ class MainWindow(QMainWindow):
         ''' Connects save button and sets default savename '''
         self.UI.SavenameButton.released.connect(self.choose_savename)
         savefolder = 'testfolder'
+        if not os.path.isdir(savefolder):
+            os.mkdir(savefolder)
         os.chdir(savefolder)
         savename = 'testfile.dat'
         if os.path.isfile(savename):
@@ -219,7 +221,7 @@ class Gatesweep(QtCore.QObject):
             self.maxcounter += 1
         elif self.gatevoltage > self.minvoltage and \
                 self.gatevoltage < self.lastvoltage:
-                    self.lastvoltage = self.gatevoltage
+            self.lastvoltage = self.gatevoltage
             self.gatevoltage -= self.stepsize
         elif self.gatevoltage == self.minvoltage:
             self.lastvoltage = self.gatevoltage
