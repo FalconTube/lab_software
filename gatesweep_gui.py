@@ -38,18 +38,29 @@ class MainWindow(QMainWindow):
         p = pg.mkPen(color=(63, 117, 204), width=2)
         self.plot = self.graph.addPlot(pen=p)
         self.plot_lower = self.graph.addPlot(pen=p)
-        self.graph.setAutoVisible(y=True)
-        self.graph.enableAutoRange('x')
-        self.graph.enableAutoRange('y')
-        #self.graph.showGrid(y=True,x=True)
-        self.graph.showAxis("right")
-        self.graph.getAxis("right").tickStrings = lambda x,y,z: ["" for value in x]
-        self.graph.showAxis("top")
-        self.graph.getAxis("top").tickStrings = lambda x,y,z: ["" for value in x]
-        self.graph.setTitle('Gatesweep')
-        self.graph.setLabel("left", "Resistance [Ohm]")
-        self.graph.setLabel("bottom", "Gatevoltage [V]")
+        self.plot.setAutoVisible(y=True)
+        self.plot.enableAutoRange('x')
+        self.plot.enableAutoRange('y')
+        #self.plot.showGrid(y=True,x=True)
+        self.plot.showAxis("right")
+        self.plot.getAxis("right").tickStrings = lambda x,y,z: ["" for value in x]
+        self.plot.showAxis("top")
+        self.plot.getAxis("top").tickStrings = lambda x,y,z: ["" for value in x]
+        self.plot.setTitle('Gatesweep')
+        self.plot.setLabel("left", "Resistance [Ohm]")
+        self.plot.setLabel("bottom", "Gatevoltage [V]")
 
+        self.plot_lower.setAutoVisible(y=True)
+        self.plot_lower.enableAutoRange('x')
+        self.plot_lower.enableAutoRange('y')
+        #self.plot_lower.showGrid(y=True,x=True)
+        self.plot_lower.showAxis("right")
+        self.plot_lower.getAxis("right").tickStrings = lambda x,y,z: ["" for value in x]
+        self.plot_lower.showAxis("top")
+        self.plot_lower.getAxis("top").tickStrings = lambda x,y,z: ["" for value in x]
+        self.plot_lower.setTitle('Leakage')
+        self.plot_lower.setLabel("left", "Gatecurrent [A]")
+        self.plot_lower.setLabel("bottom", "Gatevoltage [V]")
     def init_save(self):
         ''' Connects save button and sets default savename '''
         self.UI.SavenameButton.released.connect(self.choose_savename)
