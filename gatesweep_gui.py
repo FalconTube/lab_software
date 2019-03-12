@@ -33,6 +33,22 @@ class MainWindow(QMainWindow):
             i.close()
         print('Closed Controllers. Goodbye!')
 
+    def init_graph(self):
+        self.graph = self.UI.GSView
+        p = pg.mkPen(color=(63, 117, 204), width=2)
+        self.plot = self.graph.plot(pen=p)
+        self.graph.setAutoVisible(y=True)
+        self.graph.enableAutoRange('x')
+        self.graph.enableAutoRange('y')
+        #self.graph.showGrid(y=True,x=True)
+        self.graph.showAxis("right")
+        self.graph.getAxis("right").tickStrings = lambda x,y,z: ["" for value in x]
+        self.graph.showAxis("top")
+        self.graph.getAxis("top").tickStrings = lambda x,y,z: ["" for value in x]
+        self.graph.setTitle('Gatesweep')
+        self.graph.setLabel("left", "Resistance [Ohm]")
+        self.graph.setLabel("bottom", "Gatevoltage [V]")
+
     def init_save(self):
         ''' Connects save button and sets default savename '''
         self.UI.SavenameButton.released.connect(self.choose_savename)
@@ -84,6 +100,7 @@ class MainWindow(QMainWindow):
         self.UI.GateConnectButton.released.connect(self.init_gate)
         self.UI.KMeterConnectButton.released.connect(self.init_kmeter)
         self.UI.LMeterConnectButton.released.connect(self.init_lmeter)
+        self.UI.StartGSButton.released.connect(self.start_gatesweep)
 
     def label_connected(self, label):
         label.setText('Connected')
@@ -131,19 +148,18 @@ class MainWindow(QMainWindow):
         except:
             self.label_failed(self.UI.LMeterLabel)
 
-    def init_gs_buttons(self):
-        self.UI.StartGSButton.released.connect(self.start_gatesweep)
 
     def start_gatesweep(self):
-        minvoltage = self.UI.MingateBox.value()
-        maxvoltage = self.UI.MaxgateBox.value()
+        self.init_graph()
+        minvoltage = self.UI.MinGateBox.value()
+        maxvoltage = self.UI.MaxGateBox.value()
         stepsize = self.UI.StepsizeBox.value()
         waittime = self.UI.WaittimeBox.value()
         wait_max = True if self.UI.MaxCheckbox.isChecked() else False
         wait_max_time = self.UI.WaitmaxBox.value()
         savefile = self.savename
         self.gs = Gatesweep(self.gate, self.meter, minvoltage, maxvoltage,
-                stepsize, waittime, wait_max, wait_max_time, savefile)
+                stepsize, waittime, wait_max, wait_max_time, savefile, self.plot)
         # Also connect abort button now
         self.UI.StopGSButton.released.connect(self.gs.stop_gs)
 
@@ -163,7 +179,7 @@ class MainWindow(QMainWindow):
 class Gatesweep(QtCore.QObject):
     finished_gs = QtCore.pyqtSignal(bool)
     def __init__(self, gate, meter, minvoltage, maxvoltage, stepsize, waittime,
-            wait_max, wait_max_time, savefile):
+            wait_max, wait_max_time, savefile, plot):
         self.gate = gate
         self.meter = meter
         self.lakeshore = Lakeshore()
@@ -174,6 +190,7 @@ class Gatesweep(QtCore.QObject):
         self.wait_max = wait_max
         self.wait_max_time = wait_max_time
         self.savefile = savefile
+        self.plot = plot
         savestring = \
                 '# gatevoltage(V), temp(K), voltage(V), current(A), R_4pt(W)'
         self.create_savefile(savestring)
@@ -184,21 +201,6 @@ class Gatesweep(QtCore.QObject):
         self.savefile = open(self.savename, "w")
         self.savefile.write(savestring + "\n")
 
-    def init_graph(self):
-        self.graph = self.UI.GSView
-        p = pg.mkPen(color=(63, 117, 204), width=2)
-        self.plot = self.graph.plot(pen=p)
-        self.graph.setAutoVisible(y=True)
-        self.graph.enableAutoRange('x')
-        self.graph.enableAutoRange('y')
-        #self.graph.showGrid(y=True,x=True)
-        self.graph.showAxis("right")
-        self.graph.getAxis("right").tickStrings = lambda x,y,z: ["" for value in x]
-        self.graph.showAxis("top")
-        self.graph.getAxis("top").tickStrings = lambda x,y,z: ["" for value in x]
-        self.graph.setTitle('Gatesweep')
-        self.graph.setLabel("left", "Resistance [Ohm]")
-        self.graph.setLabel("bottom", "Gatevoltage [V]")
 
     def init_ramp_parameters(self):
         ''' Initializes counters, necessary for self.ramp_gatevoltage() '''
