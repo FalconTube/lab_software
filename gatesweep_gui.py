@@ -15,7 +15,9 @@ from Classes.measurement_class import Measurement
 class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
+        start = time.time()
         self.UI = uic.loadUi('Gatesweep.ui', self)
+        print('loaded ui in {}'.format(time.time() - start))
         self.init_port_selection()
         self.init_connect_buttons()
         self.init_save()
@@ -49,7 +51,8 @@ class MainWindow(QMainWindow):
         self.UI.SavenameLabel.setText(savepath)
 
     def choose_savename(self):
-        self.savename = QFileDialog.getSaveFileName(self, 'Choose Savename')
+        self.savename = QFileDialog.getSaveFileName(
+                self, 'Choose Savename', '.', self.tr("Text Files (*.dat)"))[0]
         self.UI.SavenameLabel.setText(self.savename)
 
     def init_port_selection(self):
@@ -137,10 +140,26 @@ class MainWindow(QMainWindow):
         wait_max = True if self.UI.MaxCheckbox.isChecked() else False
         wait_max_time = self.UI.WaitmaxBox.value()
         savefile = self.savename
-        #self.gs = Gatesweep(self.gate, self.meter, minvoltage, maxvoltage,
-                #stepsize, waittime, wait_max, wait_max_time, savefile)
+        self.gs = Gatesweep(self.gate, self.meter, minvoltage, maxvoltage,
+                stepsize, waittime, wait_max, wait_max_time, savefile)
+        # Also connect abort button now
+        self.UI.StopGSButton.released.connect(self.gs.stop_gs)
 
-class Gatesweep(Measurement):
+        self.thread = QtCore.QThread(self)
+        self.gs.finished_gs.connect(self.gs_callback)
+        self.gs.moveToThread(self.thread)
+        self.thread.started.connect(self.gs.start)
+        self.UI.GatesweepLabel.setText('Measuring!')
+        self.UI.GatesweepLabel.setStyleSheet('color: red')
+        self.thread.start()
+
+    def gs_callback(self):
+        self.UI.GatesweepLabel.setText('Idle')
+        self.UI.GatesweepLabel.setStyleSheet('color: black')
+
+
+class Gatesweep(QtCore.QObject):
+    finished_gs = QtCore.pyqtSignal(bool)
     def __init__(self, gate, meter, minvoltage, maxvoltage, stepsize, waittime,
             wait_max, wait_max_time, savefile):
         self.gate = gate
@@ -154,37 +173,30 @@ class Gatesweep(Measurement):
         self.wait_max_time = wait_max_time
         self.savefile = savefile
         savestring = \
-            '# gatevoltage(V), temp(K), voltage(V), current(A), R_4pt(W)'
+                '# gatevoltage(V), temp(K), voltage(V), current(A), R_4pt(W)'
         self.create_savefile(savestring)
         self.init_ramp_parameters()
-        try:
-            self.start_gatesweep()
-        except KeyboardInterrupt:
-            self.finish_measurement()
 
     def create_savefile(self, savestring):
         ''' Creates savefile and generates header '''
         self.savefile = open(self.savename, "w")
         self.savefile.write(savestring + "\n")
 
-    def finish_measurement(self):
-        ''' Close all Keithleys or Lakeshore devices, close savefile '''
-        self.gate.set_gatevoltage(0)
-        print("Finished measurement successfully. Closing all devices\
-        and savefile.")
-        self.savefile.close()
-        for i in Keithley.instances:
-            i.close()
-        for i in Lakeshore.instances:
-            i.close()
-        for i in Lockin.instances:
-            i.close()
-        if plt.get_fignums():
-            # If plots exists, then save them
-            print('Saving a PNG of the measurement...')
-            plt.savefig(self.savename_png)
-        else:
-            pass
+    def init_graph(self):
+        self.graph = self.UI.GSView
+        p = pg.mkPen(color=(63, 117, 204), width=2)
+        self.plot = self.graph.plot(pen=p)
+        self.graph.setAutoVisible(y=True)
+        self.graph.enableAutoRange('x')
+        self.graph.enableAutoRange('y')
+        #self.graph.showGrid(y=True,x=True)
+        self.graph.showAxis("right")
+        self.graph.getAxis("right").tickStrings = lambda x,y,z: ["" for value in x]
+        self.graph.showAxis("top")
+        self.graph.getAxis("top").tickStrings = lambda x,y,z: ["" for value in x]
+        self.graph.setTitle('Gatesweep')
+        self.graph.setLabel("left", "Resistance [Ohm]")
+        self.graph.setLabel("bottom", "Gatevoltage [V]")
 
     def init_ramp_parameters(self):
         ''' Initializes counters, necessary for self.ramp_gatevoltage() '''
@@ -197,7 +209,7 @@ class Gatesweep(Measurement):
         ''' Increments the gatevoltage and finishes the measurement '''
         if self.gatevoltage < self.maxvoltage and \
                 self.gatevoltage >= self.lastvoltage:
-            self.lastvoltage = self.gatevoltage
+                    self.lastvoltage = self.gatevoltage
             self.gatevoltage += self.stepsize
         elif self.gatevoltage == self.maxvoltage:
             if self.wait_max:
@@ -207,7 +219,7 @@ class Gatesweep(Measurement):
             self.maxcounter += 1
         elif self.gatevoltage > self.minvoltage and \
                 self.gatevoltage < self.lastvoltage:
-            self.lastvoltage = self.gatevoltage
+                    self.lastvoltage = self.gatevoltage
             self.gatevoltage -= self.stepsize
         elif self.gatevoltage == self.minvoltage:
             self.lastvoltage = self.gatevoltage
@@ -221,17 +233,19 @@ class Gatesweep(Measurement):
             if self.finishedcounter == 2:
                 self.finish_measurement()
 
+    @QtCore.pyqtSlot()
+    def start(self):
+        self.start_gatesweep()
+        self.finished_gs.emit(True)
+
     def start_gatesweep(self):
+        self.measuring = True
         x = []
         y = []
         r = []
         gc = []
-        fig = plt.figure()
-        ax = fig.add_subplot(211)
-        ax1 = fig.add_subplot(212)
-        while 1:
+        while self.measuring:
             # Set gatevoltage and measure values
-            print('Gatevoltage = {}'.format(self.gatevoltage))
             self.gate.set_gatevoltage(self.gatevoltage)
             time.sleep(self.waittime)
             meterV = self.meter.read_voltage()
@@ -244,28 +258,41 @@ class Gatesweep(Measurement):
             r.append(meterV/meterI)
             gc.append(gatecurrent)
 
-            ax.plot(x, r, 'k.')
-            ax1.plot(x, gc, 'k.')
-            plt.draw()
-            plt.pause(0.01)
+            self.plot.setData(x, r)
+
             # Write values to file
             writedict = {
-                'Gatevoltage': self.gatevoltage,
-                'T': temp,
-                'V': meterV,
-                'I': meterI,
-                'R': meterV/meterI,
-                'I_gate': gatecurrent,
-            }
+                    'Gatevoltage': self.gatevoltage,
+                    'T': temp,
+                    'V': meterV,
+                    'I': meterI,
+                    'R': meterV/meterI,
+                    'I_gate': gatecurrent,
+                    }
             for i in writedict:
                 self.savefile.write('{} ,'.format(str(writedict[i]).strip()))
             self.savefile.write("\n")
 
             # Set gatevoltage to next value
             self.ramp_gatevoltage()
+
+        # After finishing, plot it once in mpl
+        fig = plt.figure()
+        basename = os.path.basename(self.savename)
+        plt.title(basename)
+        ax = fig.add_subplot(211)
+        ax.set_ylabel(r'Resistance [$\Ohm$]')
+        ax1 = fig.add_subplot(212)
+        ax1.set_xlabel('Gatevoltage [V]')
+        ax1.set_ylabel('Gatecurrent [A]')
+        ax.plot(x, r, 'k.')
+        ax1.plot(x, gc, 'k.')
         # save figure file as png
-        # figname = fn.split('.')[0] + '_mobility.png'
-        # plt.savefig(self.savename_png)
+        savename_png = os.path.splitext(self.savename)[0] + '.png'
+        plt.savefig(savename_png)
+
+    def stop_gs(self):
+        self.measuring = False
 
 
 if __name__ == '__main__':
