@@ -228,7 +228,9 @@ class InficonSQM160(object):
 
 
 class Lockin():
+    instances = []
     def __init__(self, gpib_number=8):
+        self.__class__.instances.append(weakref.proxy(self))
         rm = visa.ResourceManager()
         self.lockin = rm.open_resource("GPIB::{}".format(gpib_number))
         print('Initialized Lockin on GPIB::{}'.format(gpib_number))

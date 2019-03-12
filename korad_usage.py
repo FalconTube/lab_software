@@ -1,11 +1,13 @@
 from Classes.korad_class import KoradSerial
 from Classes.measurement_class import Measurement
+from Classes.caching_system import CachingSystem
 import time
 import numpy as np
 import sys
 
 
 class UseKorad(KoradSerial, Measurement):
+    _cache = CachingSystem
     def __init__(self):
         try:
             self.korad = KoradSerial('COM5')

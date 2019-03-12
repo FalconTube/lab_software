@@ -6,7 +6,8 @@ from PyQt5 import QtCore, uic
 from PyQt5.QtWidgets import (
     QMainWindow,
     QApplication,
-    QLabel
+    QLabel,
+    QFileDialog
     )
 from Classes.device_classes import *
 from Classes.measurement_class import Measurement
@@ -17,15 +18,25 @@ class MainWindow(QMainWindow):
         self.UI = uic.loadUi('Gatesweep.ui', self)
         self.init_port_selection()
         self.init_connect_buttons()
+        self.init_save()
         #GS = Gatesweep(Measurement)
         self.show()
+
+    def closeEvent(self, event):
+        for i in Keithley.instances:
+            i.close()
+        for i in Lockin.instances:
+            i.close()
+        for i in Lakeshore.instances:
+            i.close()
+        print('Closed Controllers. Goodbye!')
 
     def init_save(self):
         ''' Connects save button and sets default savename '''
         self.UI.SavenameButton.released.connect(self.choose_savename)
         savefolder = 'testfolder'
         os.chdir(savefolder)
-        savename = 'testfile'
+        savename = 'testfile.dat'
         if os.path.isfile(savename):
             i = 1
             save_tmp = savename.split('.')[0]
@@ -39,6 +50,7 @@ class MainWindow(QMainWindow):
 
     def choose_savename(self):
         self.savename = QFileDialog.getSaveFileName(self, 'Choose Savename')
+        self.UI.SavenameLabel.setText(self.savename)
 
     def init_port_selection(self):
         rm = visa.ResourceManager()
@@ -164,6 +176,8 @@ class Gatesweep(Measurement):
         for i in Keithley.instances:
             i.close()
         for i in Lakeshore.instances:
+            i.close()
+        for i in Lockin.instances:
             i.close()
         if plt.get_fignums():
             # If plots exists, then save them

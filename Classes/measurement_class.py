@@ -1,12 +1,12 @@
 # __author__ = Yannic Falke
 
 from .device_classes import *
-from .caching_system import Caching_System
+#from .caching_system import Caching_System
 
 
 class Measurement():
     initial_fastplot = 0
-    _cache = Caching_System()
+    #_cache = Caching_System()
 
     def __init__(self):
         # self.cache = Caching_System()

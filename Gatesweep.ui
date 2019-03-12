@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1029</width>
-    <height>638</height>
+    <height>633</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -166,7 +166,7 @@
          <widget class="QLabel" name="SavenameLabel">
           <property name="font">
            <font>
-            <pointsize>14</pointsize>
+            <pointsize>12</pointsize>
             <weight>75</weight>
             <bold>true</bold>
            </font>
@@ -176,6 +176,9 @@
           </property>
           <property name="text">
            <string>None</string>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -296,24 +299,12 @@
          <layout class="QGridLayout" name="gridLayout_4">
           <item row="0" column="1">
            <widget class="QComboBox" name="GatePortBox">
-            <property name="currentIndex">
-             <number>1</number>
+            <property name="currentText">
+             <string/>
             </property>
-            <item>
-             <property name="text">
-              <string>1</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>2</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>3</string>
-             </property>
-            </item>
+            <property name="currentIndex">
+             <number>-1</number>
+            </property>
            </widget>
           </item>
           <item row="0" column="0">
