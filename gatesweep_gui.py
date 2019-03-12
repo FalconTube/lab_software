@@ -36,7 +36,8 @@ class MainWindow(QMainWindow):
     def init_graph(self):
         self.graph = self.UI.GSView
         p = pg.mkPen(color=(63, 117, 204), width=2)
-        self.plot = self.graph.plot(pen=p)
+        self.plot = self.graph.addPlot(pen=p)
+        self.plot_lower = self.graph.addPlot(pen=p)
         self.graph.setAutoVisible(y=True)
         self.graph.enableAutoRange('x')
         self.graph.enableAutoRange('y')
@@ -179,7 +180,7 @@ class MainWindow(QMainWindow):
 class Gatesweep(QtCore.QObject):
     finished_gs = QtCore.pyqtSignal(bool)
     def __init__(self, gate, meter, minvoltage, maxvoltage, stepsize, waittime,
-            wait_max, wait_max_time, savefile, plot):
+            wait_max, wait_max_time, savefile, plot, plot_lower):
         self.gate = gate
         self.meter = meter
         self.lakeshore = Lakeshore()
@@ -191,6 +192,7 @@ class Gatesweep(QtCore.QObject):
         self.wait_max_time = wait_max_time
         self.savefile = savefile
         self.plot = plot
+        self.plot_lower = plot_lower
         savestring = \
                 '# gatevoltage(V), temp(K), voltage(V), current(A), R_4pt(W)'
         self.create_savefile(savestring)
@@ -263,6 +265,7 @@ class Gatesweep(QtCore.QObject):
             gc.append(gatecurrent)
 
             self.plot.setData(x, r)
+            self.plot_lower.setData(x, gc)
 
             # Write values to file
             writedict = {
@@ -285,8 +288,8 @@ class Gatesweep(QtCore.QObject):
         basename = os.path.basename(self.savename)
         plt.title(basename)
         ax = fig.add_subplot(211)
-        ax.set_ylabel(r'Resistance [$\Omega$]')
         ax1 = fig.add_subplot(212)
+        ax.set_ylabel(r'Resistance [$\Omega$]')
         ax1.set_xlabel('Gatevoltage [V]')
         ax1.set_ylabel('Gatecurrent [A]')
         ax.plot(x, r, 'k.')

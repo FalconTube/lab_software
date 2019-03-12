@@ -252,7 +252,7 @@
      </item>
     </layout>
    </widget>
-   <widget class="PlotWidget" name="GSView">
+   <widget class="GraphicsLayoutWidget" name="GSView">
     <property name="geometry">
      <rect>
       <x>310</x>
@@ -449,7 +449,7 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>PlotWidget</class>
+   <class>GraphicsLayoutWidget</class>
    <extends>QGraphicsView</extends>
    <header>pyqtgraph</header>
   </customwidget>

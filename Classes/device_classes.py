@@ -376,6 +376,9 @@ class Lockin():
     def close(self):
         self.lockin.close()
 
+    def read_current(self):
+        return 1
+
 
 class FUG():
     def __init__(self):
