@@ -54,8 +54,14 @@
             <property name="decimals">
              <number>0</number>
             </property>
+            <property name="minimum">
+             <double>-100.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>0.000000000000000</double>
+            </property>
             <property name="value">
-             <double>40.000000000000000</double>
+             <double>-40.000000000000000</double>
             </property>
            </widget>
           </item>
@@ -81,13 +87,13 @@
              <number>0</number>
             </property>
             <property name="minimum">
-             <double>-100.000000000000000</double>
-            </property>
-            <property name="maximum">
              <double>0.000000000000000</double>
             </property>
+            <property name="maximum">
+             <double>100.000000000000000</double>
+            </property>
             <property name="value">
-             <double>-40.000000000000000</double>
+             <double>40.000000000000000</double>
             </property>
            </widget>
           </item>
@@ -448,6 +454,24 @@
    <header>pyqtgraph</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>MinGateBox</tabstop>
+  <tabstop>MaxGateBox</tabstop>
+  <tabstop>StepsizeBox</tabstop>
+  <tabstop>WaittimeBox</tabstop>
+  <tabstop>WaitmaxBox</tabstop>
+  <tabstop>MaxCheckbox</tabstop>
+  <tabstop>SavenameButton</tabstop>
+  <tabstop>StartGSButton</tabstop>
+  <tabstop>StopGSButton</tabstop>
+  <tabstop>GatePortBox</tabstop>
+  <tabstop>GateConnectButton</tabstop>
+  <tabstop>KMeterPortBox</tabstop>
+  <tabstop>KMeterConnectButton</tabstop>
+  <tabstop>LMeterPortBox</tabstop>
+  <tabstop>LMeterConnectButton</tabstop>
+  <tabstop>GSView</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

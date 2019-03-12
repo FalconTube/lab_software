@@ -285,7 +285,7 @@ class Gatesweep(QtCore.QObject):
         basename = os.path.basename(self.savename)
         plt.title(basename)
         ax = fig.add_subplot(211)
-        ax.set_ylabel(r'Resistance [$\Ohm$]')
+        ax.set_ylabel(r'Resistance [$\Omega$]')
         ax1 = fig.add_subplot(212)
         ax1.set_xlabel('Gatevoltage [V]')
         ax1.set_ylabel('Gatecurrent [A]')
