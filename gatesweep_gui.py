@@ -209,7 +209,7 @@ class Gatesweep(QtCore.QObject):
         ''' Increments the gatevoltage and finishes the measurement '''
         if self.gatevoltage < self.maxvoltage and \
                 self.gatevoltage >= self.lastvoltage:
-                    self.lastvoltage = self.gatevoltage
+            self.lastvoltage = self.gatevoltage
             self.gatevoltage += self.stepsize
         elif self.gatevoltage == self.maxvoltage:
             if self.wait_max:
