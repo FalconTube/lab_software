@@ -171,7 +171,8 @@ class MainWindow(QMainWindow):
         wait_max_time = self.UI.WaitmaxBox.value()
         savefile = self.savename
         self.gs = Gatesweep(self.gate, self.meter, minvoltage, maxvoltage,
-                stepsize, waittime, wait_max, wait_max_time, savefile, self.plot)
+                stepsize, waittime, wait_max, wait_max_time, savefile,
+                self.plot, self.plot_lower)
         # Also connect abort button now
         self.UI.StopGSButton.released.connect(self.gs.stop_gs)
 
@@ -191,7 +192,8 @@ class MainWindow(QMainWindow):
 class Gatesweep(QtCore.QObject):
     finished_gs = QtCore.pyqtSignal(bool)
     def __init__(self, gate, meter, minvoltage, maxvoltage, stepsize, waittime,
-            wait_max, wait_max_time, savefile, plot, plot_lower):
+            wait_max, wait_max_time, savename, plot, plot_lower):
+        QtCore.QObject.__init__(self)
         self.gate = gate
         self.meter = meter
         self.lakeshore = Lakeshore()
@@ -201,7 +203,7 @@ class Gatesweep(QtCore.QObject):
         self.waittime = waittime
         self.wait_max = wait_max
         self.wait_max_time = wait_max_time
-        self.savefile = savefile
+        self.savename = savename
         self.plot = plot
         self.plot_lower = plot_lower
         savestring = \
