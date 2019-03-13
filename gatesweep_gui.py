@@ -132,21 +132,24 @@ class MainWindow(QMainWindow):
 
     def init_gate(self):
         port = self.UI.GatePortBox.currentText()
+        compliance = self.UI.GateComplianceBox.value()
         try:
-            self.gate = Gate(port)
+            self.gate = Gate(port, compliance)
             self.label_connected(self.UI.GateLabel)
         except:
             self.label_failed(self.UI.GateLabel)
 
     def init_kmeter(self):
         port = self.UI.KMeterPortBox.currentText()
+        fwire = True if self.UI.WireCheckBox.isChecked() else False
+        vsource = self.UI.VSourceBox.value()
         try:
             self.meter.close()
             self.label_idle(self.UI.LMeterLabel)
         except:
             pass
         try:
-            self.meter = Meter(port)
+            self.meter = Meter(port, vsource, fwire)
             self.label_connected(self.UI.KMeterLabel)
         except:
             self.label_failed(self.UI.KMeterLabel)
