@@ -7,7 +7,9 @@ from PyQt5.QtWidgets import (
     QMainWindow,
     QApplication,
     QLabel,
-    QFileDialog
+    QFileDialog,
+    QMediaPlayer,
+    QMediaContent,
     )
 from Classes.device_classes import *
 from Classes.measurement_class import Measurement
@@ -179,9 +181,10 @@ class MainWindow(QMainWindow):
         # Check if file exists again, user could not have changed old one
         self.init_save(self.savename)
         savefile = self.savename
+        benny_hill = True if self.UI.BennyHillBox.isChecked() else False
         self.gs = Gatesweep(self.gate, self.meter, minvoltage, maxvoltage,
                 stepsize, waittime, wait_max, wait_max_time, savefile,
-                self.plot, self.plot_lower)
+                self.plot, self.plot_lower, benny_hill)
         # Also connect abort button now
         self.UI.StopGSButton.released.connect(self.gs.stop_gs)
 
@@ -201,8 +204,17 @@ class MainWindow(QMainWindow):
 class Gatesweep(QtCore.QObject):
     finished_gs = QtCore.pyqtSignal(bool)
     def __init__(self, gate, meter, minvoltage, maxvoltage, stepsize, waittime,
-            wait_max, wait_max_time, savename, plot, plot_lower):
+            wait_max, wait_max_time, savename, plot, plot_lower, enable_music):
         QtCore.QObject.__init__(self)
+        # Implement benny music for fun!
+        self.playlist = QMediaPlaylist()
+        path_to_music = os.path.abspath('benny_hill.mp3')
+        self.url = QtCore.QUrl.fromLocalFile(path_to_music)
+        self.playlist.addMedia(QMediaContent(self.url))
+        #self.playlist.setPlaybackMode(QMediaPlaylist.Loop)
+        self.music = QMediaPlayer()
+        self.music.setPlaylist(self.playlist)
+        # End of music implementation
         self.gate = gate
         self.meter = meter
         self.lakeshore = Lakeshore()
@@ -215,6 +227,7 @@ class Gatesweep(QtCore.QObject):
         self.savename = savename
         self.plot = plot
         self.plot_lower = plot_lower
+        self.enable_music = enable_music
         savestring = \
                 '# gatevoltage(V), temp(K), voltage(V), current(A), R_4pt(W)'
         self.create_savefile(savestring)
@@ -267,6 +280,8 @@ class Gatesweep(QtCore.QObject):
         self.finished_gs.emit(True)
 
     def start_gatesweep(self):
+        if self.enable_music:
+            self.music.play()
         self.measuring = True
         x = []
         y = []
@@ -304,6 +319,7 @@ class Gatesweep(QtCore.QObject):
 
             # Set gatevoltage to next value
             self.ramp_gatevoltage()
+        self.music.stop()
 
         # Here the measurement is aborted or finished
         self.gate.set_gatevoltage(0)
