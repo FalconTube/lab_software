@@ -3,6 +3,7 @@
 import sys
 import pyqtgraph as pg
 from PyQt5 import QtCore, uic
+from PyQt5.QtMultimedia import QMediaPlayer, QMediaPlaylist, QMediaContent
 from PyQt5.QtWidgets import (
     QMainWindow,
     QApplication,
