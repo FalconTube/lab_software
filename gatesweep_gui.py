@@ -15,9 +15,7 @@ from Classes.measurement_class import Measurement
 class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
-        start = time.time()
         self.UI = uic.loadUi('Gatesweep.ui', self)
-        print('loaded ui in {}'.format(time.time() - start))
         self.init_port_selection()
         self.init_connect_buttons()
         self.init_save()
@@ -29,12 +27,17 @@ class MainWindow(QMainWindow):
             i.close()
         for i in Lockin.instances:
             i.close()
-        for i in Lakeshore.instances:
-            i.close()
+        # for i in Lakeshore.instances:
+            # i.close()
         print('Closed Controllers. Goodbye!')
 
     def init_graph(self):
         self.graphicsview = self.UI.GSView
+        try:
+            self.graphicsview.removeItem(self.graph)
+            self.graphicsview.removeItem(self.graph_lower)
+        except:
+            pass
         p = pg.mkPen(color=(63, 117, 204), width=2)
         self.graph = self.graphicsview.addPlot(row=1, col=1)
         self.graph_lower = self.graphicsview.addPlot(row=2, col=1)
@@ -63,22 +66,20 @@ class MainWindow(QMainWindow):
         self.graph_lower.setTitle('Leakage')
         self.graph_lower.setLabel("left", "Gatecurrent [A]")
         self.graph_lower.setLabel("bottom", "Gatevoltage [V]")
-    def init_save(self):
+
+    def init_save(self, savepath=None):
         ''' Connects save button and sets default savename '''
-        self.UI.SavenameButton.released.connect(self.choose_savename)
-        savefolder = 'testfolder'
-        if not os.path.isdir(savefolder):
-            os.mkdir(savefolder)
-        os.chdir(savefolder)
-        savename = 'testfile.dat'
-        if os.path.isfile(savename):
+        if savepath == None:
+            savefolder = 'testfolder/'
+            if not os.path.isdir(savefolder):
+                os.mkdir(savefolder)
+            savepath = savefolder + 'testfile.dat'
+        if os.path.isfile(savepath):
             i = 1
-            save_tmp = savename.split('.')[0]
+            save_tmp = savepath.split('.')[0]
             while os.path.isfile(save_tmp + "_{}.dat".format(i)):
                 i += 1
-            savename = save_tmp + "_{}.dat".format(i)
-        os.chdir('../')
-        savepath = savefolder + '/' + savename
+            savepath = save_tmp + "_{}.dat".format(i)
         self.savename = savepath
         self.UI.SavenameLabel.setText(savepath)
 
@@ -115,6 +116,7 @@ class MainWindow(QMainWindow):
         self.UI.KMeterConnectButton.released.connect(self.init_kmeter)
         self.UI.LMeterConnectButton.released.connect(self.init_lmeter)
         self.UI.StartGSButton.released.connect(self.start_gatesweep)
+        self.UI.SavenameButton.released.connect(self.choose_savename)
 
     def label_connected(self, label):
         label.setText('Connected')
@@ -171,6 +173,8 @@ class MainWindow(QMainWindow):
         waittime = self.UI.WaittimeBox.value()
         wait_max = True if self.UI.MaxCheckbox.isChecked() else False
         wait_max_time = self.UI.WaitmaxBox.value()
+        # Check if file exists again, user could not have changed old one
+        self.init_save(self.savename)
         savefile = self.savename
         self.gs = Gatesweep(self.gate, self.meter, minvoltage, maxvoltage,
                 stepsize, waittime, wait_max, wait_max_time, savefile,
@@ -248,11 +252,11 @@ class Gatesweep(QtCore.QObject):
             self.maxcounter += 1
         if self.maxvoltage >= 0 and self.minvoltage >= 0:
             if self.maxcounter == 2:
-                self.finish_measurement()
+                self.stop_gs()
         if self.gatevoltage == 0:
             self.finishedcounter += 1
             if self.finishedcounter == 2:
-                self.finish_measurement()
+                self.stop_gs()
 
     @QtCore.pyqtSlot()
     def start(self):
@@ -292,18 +296,21 @@ class Gatesweep(QtCore.QObject):
                     'I_gate': gatecurrent,
                     }
             for i in writedict:
-                self.savefile.write('{} ,'.format(str(writedict[i]).strip()))
+                self.savefile.write('{} , '.format(str(writedict[i]).strip()))
             self.savefile.write("\n")
 
             # Set gatevoltage to next value
             self.ramp_gatevoltage()
 
+        # Here the measurement is aborted or finished
+        self.gate.set_gatevoltage(0)
+        self.savefile.close()
         # After finishing, plot it once in mpl
         fig = plt.figure()
-        basename = os.path.basename(self.savename)
-        plt.title(basename)
         ax = fig.add_subplot(211)
         ax1 = fig.add_subplot(212)
+        basename = os.path.basename(self.savename)
+        fig.suptitle(os.path.splitext(basename))
         ax.set_ylabel(r'Resistance [$\Omega$]')
         ax1.set_xlabel('Gatevoltage [V]')
         ax1.set_ylabel('Gatecurrent [A]')
@@ -311,7 +318,8 @@ class Gatesweep(QtCore.QObject):
         ax1.plot(x, gc, 'k.')
         # save figure file as png
         savename_png = os.path.splitext(self.savename)[0] + '.png'
-        plt.savefig(savename_png)
+        fig.tight_layout()
+        fig.savefig(savename_png)
 
     def stop_gs(self):
         self.measuring = False
