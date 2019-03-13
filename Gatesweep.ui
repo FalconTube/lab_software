@@ -341,7 +341,7 @@
            </widget>
           </item>
           <item row="2" column="1">
-           <widget class="QDoubleSpinBox" name="GateComplianeBox">
+           <widget class="QDoubleSpinBox" name="GateComplianceBox">
             <property name="decimals">
              <number>4</number>
             </property>
