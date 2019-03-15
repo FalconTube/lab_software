@@ -22,6 +22,7 @@ class GrapheneGrowth(QMainWindow):
         self.init_crystal_values()
         self.init_graph()
         self.init_port_selection()
+        self.UI.StatusLabel.setDragEnabled()
         self.show()
 
     def init_crystal_values(self):
@@ -88,7 +89,8 @@ class GrapheneGrowth(QMainWindow):
         crystal = self.UI.CrystalBox.currentText()
         heatval = self.crystal_dict[crystal]
         print(heatval)
-        self.GrowCycle = GrowCycle(10, 20, heatval, self.plot)
+        self.GrowCycle = GrowCycle(target=heatval, duration=10*60,
+                sleep_time=0.2, plot=self.plot, crystal=crystal)
         self.thread = QtCore.QThread(self)
         self.GrowCycle.grow_finished.connect(self.grow_callback)
         self.GrowCycle.moveToThread(self.thread)

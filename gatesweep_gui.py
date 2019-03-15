@@ -9,8 +9,6 @@ from PyQt5.QtWidgets import (
     QApplication,
     QLabel,
     QFileDialog,
-    QMediaPlayer,
-    QMediaContent,
     )
 from Classes.device_classes import *
 from Classes.measurement_class import Measurement
@@ -34,8 +32,9 @@ class MainWindow(QMainWindow):
             # i.close()
         print('Closed Controllers. Goodbye!')
 
-    def init_graph(self):
+    def init_graph(self, single=False):
         self.graphicsview = self.UI.GSView
+        xlabel = 'Time [s]' if single else 'Gatevoltage [V]'
         try:
             self.graphicsview.removeItem(self.graph)
             self.graphicsview.removeItem(self.graph_lower)
@@ -43,9 +42,7 @@ class MainWindow(QMainWindow):
             pass
         p = pg.mkPen(color=(63, 117, 204), width=2)
         self.graph = self.graphicsview.addPlot(row=1, col=1)
-        self.graph_lower = self.graphicsview.addPlot(row=2, col=1)
         self.plot = self.graph.plot(pen=p)
-        self.plot_lower = self.graph_lower.plot(pen=p)
         self.graph.setAutoVisible(y=True)
         self.graph.enableAutoRange('x')
         self.graph.enableAutoRange('y')
@@ -56,19 +53,22 @@ class MainWindow(QMainWindow):
         self.graph.getAxis("top").tickStrings = lambda x,y,z: ["" for value in x]
         self.graph.setTitle('Gatesweep')
         self.graph.setLabel("left", "Resistance [Ohm]")
-        self.graph.setLabel("bottom", "Gatevoltage [V]")
+        self.graph.setLabel("bottom", xlabel)
 
-        self.graph_lower.setAutoVisible(y=True)
-        self.graph_lower.enableAutoRange('x')
-        self.graph_lower.enableAutoRange('y')
-        #self.graph_lower.showGrid(y=True,x=True)
-        self.graph_lower.showAxis("right")
-        self.graph_lower.getAxis("right").tickStrings = lambda x,y,z: ["" for value in x]
-        self.graph_lower.showAxis("top")
-        self.graph_lower.getAxis("top").tickStrings = lambda x,y,z: ["" for value in x]
-        self.graph_lower.setTitle('Leakage')
-        self.graph_lower.setLabel("left", "Gatecurrent [A]")
-        self.graph_lower.setLabel("bottom", "Gatevoltage [V]")
+        if not single:
+            self.graph_lower = self.graphicsview.addPlot(row=2, col=1)
+            self.plot_lower = self.graph_lower.plot(pen=p)
+            self.graph_lower.setAutoVisible(y=True)
+            self.graph_lower.enableAutoRange('x')
+            self.graph_lower.enableAutoRange('y')
+            #self.graph_lower.showGrid(y=True,x=True)
+            self.graph_lower.showAxis("right")
+            self.graph_lower.getAxis("right").tickStrings = lambda x,y,z: ["" for value in x]
+            self.graph_lower.showAxis("top")
+            self.graph_lower.getAxis("top").tickStrings = lambda x,y,z: ["" for value in x]
+            self.graph_lower.setTitle('Leakage')
+            self.graph_lower.setLabel("left", "Gatecurrent [A]")
+            self.graph_lower.setLabel("bottom", xlabel)
 
     def init_save(self, savepath=None):
         ''' Connects save button and sets default savename '''
@@ -120,6 +120,7 @@ class MainWindow(QMainWindow):
         self.UI.LMeterConnectButton.released.connect(self.init_lmeter)
         self.UI.StartGSButton.released.connect(self.start_gatesweep)
         self.UI.SavenameButton.released.connect(self.choose_savename)
+        self.UI.StartResButton.released.connect(self.start_resmeas)
 
     def label_connected(self, label):
         label.setText('Connected')
@@ -196,6 +197,27 @@ class MainWindow(QMainWindow):
         self.UI.GatesweepLabel.setText('Measuring!')
         self.UI.GatesweepLabel.setStyleSheet('color: red')
         self.thread.start()
+
+    def start_resmeas(self):
+        gain_time = 60
+        meterI = 1E-5
+        self.init_graph()
+        # Check if file exists again, user could not have changed old one
+        self.init_save(self.savename)
+        savefile = self.savename
+        self.res = ResLogger(self.meter, self.savename, self.plot,
+                gain_time, meterI)
+        # Also connect abort button now
+        self.UI.StopGSButton.released.connect(self.res.stop_res)
+
+        self.thread = QtCore.QThread(self)
+        self.res.finished_gs.connect(self.gs_callback)
+        self.res.moveToThread(self.thread)
+        self.thread.started.connect(self.res.start)
+        self.UI.GatesweepLabel.setText('Measuring!')
+        self.UI.GatesweepLabel.setStyleSheet('color: red')
+        self.thread.start()
+
 
     def gs_callback(self):
         self.UI.GatesweepLabel.setText('Idle')
@@ -342,6 +364,71 @@ class Gatesweep(QtCore.QObject):
         fig.savefig(savename_png)
 
     def stop_gs(self):
+        self.measuring = False
+
+class ResLogger(QtCore.QObject):
+    finished_gs = QtCore.pyqtSignal(bool)
+    def __init__(self, meter, savename, plot):
+    #def __init__(self, meter, savename, plot, autogain_time, meterI):
+        # self.gate = Gate(1)
+        # self.meter = Meter(2, four_wire=False, curr_source=1E-6)
+        self.meter = meter
+        self.lakeshore = Lakeshore()
+        self.savename = savename
+        self.plot = plot
+        self.gain_time = 60# in SEC
+        self.meterI = 1
+
+        savestring = "# time[s], Voltage[V], R[Ohms], temperature[K]"
+        self.create_savefile(savestring)
+        self.measuring = True
+
+    def create_savefile(self, savestring):
+        ''' Creates savefile and generates header '''
+        self.savefile = open(self.savename, "w")
+        self.savefile.write(savestring + "\n")
+
+    def start(self):
+        r = []
+        t = []
+        v = []
+        temps = []
+        start_time = time.time()
+        four_point_fac = np.pi * 2 / ln(2)
+        reset_start = time.time()
+        while self.measuring:
+            time.sleep(1)
+            time_elapsed = time.time() - start_time
+            reset_time = time.time() - reset_start
+            if self.gain_time != 0:
+                if reset_time >= self.gain_time:
+                    self.meter.auto_gain()
+                    time.sleep(10)
+                    reset_start = time.time()
+            meterV = float(self.meter.read_voltage())
+            # meterI = self.meter.read_current()
+            meterI = self.meterI# ampere
+            temperature = self.lakeshore.read_temp()
+            #resistance = meterV / meterI * four_point_fac           #with van der pauw geometrie
+            resistance = meterV / meterI                             #without van der pauw geometrie
+
+            temps.append(temperature)
+            t.append(time_elapsed)
+            r.append(resistance)
+            v.append(meterV)
+            # Plot values in real time
+            self.plot.setData(t, r)
+            self.plot_lower.setData(temps, r)
+            self.savefile.write(
+                "{}, {}, {}, {} \n".format(time_elapsed, meterV, resistance, temperature)
+            )
+            print(
+                "Time: {}, Voltage: {}, R: {}, Temp: {}".format(
+                    time_elapsed, meterV, resistance, temperature
+                )
+            )
+
+    def stop_res(self):
         self.measuring = False
 
 

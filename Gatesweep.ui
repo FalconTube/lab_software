@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1130</width>
-    <height>870</height>
+    <width>1138</width>
+    <height>898</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,8 +19,8 @@
      <rect>
       <x>10</x>
       <y>20</y>
-      <width>273</width>
-      <height>607</height>
+      <width>297</width>
+      <height>861</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout">
@@ -34,7 +34,7 @@
        </property>
        <layout class="QGridLayout" name="gridLayout_2">
         <item row="0" column="0">
-         <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0,0,0" rowminimumheight="0,0,0,0,0,0">
+         <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0,0" rowminimumheight="0,0,0,0,0">
           <item row="1" column="0">
            <widget class="QLabel" name="label_2">
             <property name="text">
@@ -195,9 +195,6 @@
           </property>
          </widget>
         </item>
-        <item>
-         <layout class="QVBoxLayout" name="verticalLayout_2"/>
-        </item>
        </layout>
       </widget>
      </item>
@@ -254,8 +251,54 @@
           </property>
          </widget>
         </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="groupBox_7">
+       <property name="title">
+        <string>Resistance VS Time</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_6">
         <item>
-         <layout class="QVBoxLayout" name="verticalLayout_5"/>
+         <widget class="QLabel" name="ResLabel">
+          <property name="font">
+           <font>
+            <pointsize>14</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Idle</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="StartResButton">
+          <property name="autoFillBackground">
+           <bool>false</bool>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">color : green</string>
+          </property>
+          <property name="text">
+           <string>Start Measurement</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="StopResButton">
+          <property name="styleSheet">
+           <string notr="true">color : red</string>
+          </property>
+          <property name="text">
+           <string>STOP</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_7"/>
         </item>
        </layout>
       </widget>
@@ -278,7 +321,7 @@
       <x>310</x>
       <y>20</y>
       <width>801</width>
-      <height>246</height>
+      <height>263</height>
      </rect>
     </property>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -546,8 +589,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1130</width>
-     <height>30</height>
+     <width>1138</width>
+     <height>36</height>
     </rect>
    </property>
   </widget>
