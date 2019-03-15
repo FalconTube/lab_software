@@ -121,6 +121,7 @@ class MainWindow(QMainWindow):
         self.UI.StartGSButton.released.connect(self.start_gatesweep)
         self.UI.SavenameButton.released.connect(self.choose_savename)
         self.UI.StartResButton.released.connect(self.start_resmeas)
+        self.UI.AutoGainButton.released.connect(self.set_autogain_time)
 
     def label_connected(self, label):
         label.setText('Connected')
@@ -205,10 +206,9 @@ class MainWindow(QMainWindow):
         # Check if file exists again, user could not have changed old one
         self.init_save(self.savename)
         savefile = self.savename
-        self.res = ResLogger(self.meter, self.savename, self.plot,
-                gain_time, meterI)
+        self.res = ResLogger(self.meter, self.savename, self.plot, self.plot_lower)
         # Also connect abort button now
-        self.UI.StopGSButton.released.connect(self.res.stop_res)
+        self.UI.StopResButton.released.connect(self.res.stop_res)
 
         self.thread = QtCore.QThread(self)
         self.res.finished_gs.connect(self.gs_callback)
@@ -218,6 +218,12 @@ class MainWindow(QMainWindow):
         self.UI.GatesweepLabel.setStyleSheet('color: red')
         self.thread.start()
 
+    def set_autogain_time(self):
+        auto_gain = self.UI.GainTimeBox.value()
+        try:
+            self.res.set_autogain_time(auto_gain)
+        except:
+            pass
 
     def gs_callback(self):
         self.UI.GatesweepLabel.setText('Idle')
@@ -368,7 +374,8 @@ class Gatesweep(QtCore.QObject):
 
 class ResLogger(QtCore.QObject):
     finished_gs = QtCore.pyqtSignal(bool)
-    def __init__(self, meter, savename, plot):
+    def __init__(self, meter, savename, plot, plot_lower):
+        QtCore.QObject.__init__(self)
     #def __init__(self, meter, savename, plot, autogain_time, meterI):
         # self.gate = Gate(1)
         # self.meter = Meter(2, four_wire=False, curr_source=1E-6)
@@ -376,12 +383,16 @@ class ResLogger(QtCore.QObject):
         self.lakeshore = Lakeshore()
         self.savename = savename
         self.plot = plot
+        self.plot_lower = plot_lower
         self.gain_time = 60# in SEC
         self.meterI = 1
 
         savestring = "# time[s], Voltage[V], R[Ohms], temperature[K]"
         self.create_savefile(savestring)
         self.measuring = True
+
+    def set_gain_time(self, gain_time):
+        self.gain_time = gain_time
 
     def create_savefile(self, savestring):
         ''' Creates savefile and generates header '''
@@ -394,7 +405,7 @@ class ResLogger(QtCore.QObject):
         v = []
         temps = []
         start_time = time.time()
-        four_point_fac = np.pi * 2 / ln(2)
+        #four_point_fac = np.pi * 2 / ln(2)
         reset_start = time.time()
         while self.measuring:
             time.sleep(1)
