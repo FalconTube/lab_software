@@ -103,9 +103,10 @@ class Meter(Keithley):
                 ':OUTP OFF',
                 ':SOUR:FUNC CURR',  # Set current mode
                 ':SOUR:CURR:MODE FIX',
-                ':SOUR:CURR:RANG 0.0000100',  # Set acceptable current range to 100uA
+                #':SOUR:CURR:RANG 0.0000100',  # Set acceptable current range to 100uA
+                ':SOUR:CURR:RANG 0.200',  # Set acceptable current range to 100uA
                 ':SENS:FUNC "VOLT"',  # Set-up voltage measurement
-                ':SENS:VOLT:PROT 20.0',  # Set voltage compliance
+                ':SENS:VOLT:PROT 120.0',  # Set voltage compliance
                 # Turn on 4-wire sensing
                 ':SYST:RSEN {}'.format(self.fwire_str),
                 # Set current source to 10 uA

@@ -2,14 +2,16 @@
 
 from Classes.device_classes import *
 from Classes.measurement_class import Measurement
+from Classes.caching_system import CachingSystem
 
 
 class Gatesweep(Measurement):
+    _cache = CachingSystem()
     def __init__(self):
         self.gate = Gate(1)
         # self.meter = Meter(2, four_wire=False, curr_source=1E-6)
         inp_volt = float(self._cache.cache_input('Define Volt source (default=0.1V): ', 0.1))
-        self.meter = Meter(2, four_wire=False, set_source_voltage=True, volt_source=inp_volt)
+        self.meter = Meter(2, four_wire=False, set_source_voltage=True, source_val=inp_volt)
         self.lakeshore = Lakeshore()
         self.ask_savename()
         self.ask_parameters()
@@ -128,10 +130,11 @@ class Gatesweep(Measurement):
         y = []
         r = []
         gc = []
+        meterI_list = []
         fig = plt.figure()
         ax = fig.add_subplot(211)
         ax.set_xlabel('Gatevoltage [V]')
-        ax.set_ylabel('Resistance')
+        ax.set_ylabel('Current [A]')
         ax1 = fig.add_subplot(212)
         ax1.set_ylabel('Gatecurrent [A]')
         plt.tight_layout()
@@ -148,10 +151,11 @@ class Gatesweep(Measurement):
             x.append(self.gatevoltage)
             y.append(meterV)
             r.append(meterV/meterI)
+            meterI_list.append(meterI)
             gc.append(gatecurrent)
             
 
-            ax.plot(x, r, 'k.')
+            ax.plot(x, meterI_list, 'k.')
             ax1.plot(x, gc, 'k.')
             plt.draw()
             plt.pause(0.01)

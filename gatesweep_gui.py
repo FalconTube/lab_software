@@ -384,7 +384,7 @@ class ResLogger(QtCore.QObject):
         self.savename = savename
         self.plot = plot
         self.plot_lower = plot_lower
-        self.gain_time = 60# in SEC
+        self.gain_time = 0# in SEC
         self.meterI = 1
 
         savestring = "# time[s], Voltage[V], R[Ohms], temperature[K]"
@@ -417,8 +417,8 @@ class ResLogger(QtCore.QObject):
                     time.sleep(10)
                     reset_start = time.time()
             meterV = float(self.meter.read_voltage())
-            # meterI = self.meter.read_current()
-            meterI = self.meterI# ampere
+            meterI = self.meter.read_current()
+            #meterI = self.meterI# ampere
             temperature = self.lakeshore.read_temp()
             #resistance = meterV / meterI * four_point_fac           #with van der pauw geometrie
             resistance = meterV / meterI                             #without van der pauw geometrie
@@ -434,7 +434,7 @@ class ResLogger(QtCore.QObject):
                 "{}, {}, {}, {} \n".format(time_elapsed, meterV, resistance, temperature)
             )
             print(
-                "Time: {}, Voltage: {}, R: {}, Temp: {}".format(
+                    "Time: {:.1f}, Voltage: {}, R: {}, Temp: {}".format(
                     time_elapsed, meterV, resistance, temperature
                 )
             )
