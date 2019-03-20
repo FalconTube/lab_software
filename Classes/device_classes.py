@@ -127,7 +127,7 @@ class Meter(Keithley):
                 # Set current compliance 100uA
                 # ':SENS:CURR:PROT {}'.format(self.compliance),
                 # Set voltage source to 0V
-                ':SOUR:VOLT:LEV {}'.format(self.source_val),
+                # ':SOUR:VOLT:LEV {}'.format(self.source_val),
                 ':OUTP ON'
             ]
 

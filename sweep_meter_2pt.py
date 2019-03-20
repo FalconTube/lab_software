@@ -20,6 +20,7 @@ class Gatesweep(Measurement):
         try:
             self.start_gatesweep()
         except KeyboardInterrupt:
+            self.meter.set_voltage(0)
             self.gate.set_gatevoltage(0)
             self.finish_measurement()
 
@@ -111,7 +112,11 @@ class Gatesweep(Measurement):
         #ax.set_ylabel('Resistance [Ohm]')
         ax1 = fig.add_subplot(212)
         ax1.set_ylabel('Gatecurrent [A]')
-        self.gate.set_gatevoltage(self.gate_voltage)
+        for i in np.linspace(0, self.gate_voltage, 30):
+            print('setting gate to {}'.format(i))
+            self.gate.set_gatevoltage(i)
+            time.sleep(0.1)
+        #self.gate.set_gatevoltage(self.gate_voltage)
         plt.tight_layout()
         while 1:
             # Set gatevoltage and measure values
@@ -132,8 +137,8 @@ class Gatesweep(Measurement):
 
             ax.plot(x, mI_list, 'k.')
             ax1.plot(x, gc, 'k.')
-            plt.draw()
-            plt.pause(0.01)
+            # plt.draw()
+            # plt.pause(0.01)
             # Write values to file
             writedict = {
                 'Gatevoltage': self.gate_voltage,
@@ -146,9 +151,15 @@ class Gatesweep(Measurement):
             for i in writedict:
                 self.savefile.write('{} ,'.format(str(writedict[i]).strip()))
             self.savefile.write("\n")
+            self.savefile.flush()
 
             # Set gatevoltage to next value
             self.ramp_gatevoltage()
+
+        plt.draw()
+        plt.pause(0.01)
+        self.meter.set_voltage(0)
+        self.gate.set_gatevoltage(0)
         # save figure file as png
         # figname = fn.split('.')[0] + '_mobility.png'
         # plt.savefig(self.savename_png)

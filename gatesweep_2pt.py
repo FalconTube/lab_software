@@ -11,13 +11,14 @@ class Gatesweep(Measurement):
         self.gate = Gate(1)
         # self.meter = Meter(2, four_wire=False, curr_source=1E-6)
         inp_volt = float(self._cache.cache_input('Define Volt source (default=0.1V): ', 0.1))
+        self.source_val = inp_volt
         self.meter = Meter(2, four_wire=False, set_source_voltage=True, source_val=inp_volt)
         self.lakeshore = Lakeshore()
         self.ask_savename()
         self.ask_parameters()
         self.wait_max = self.ask_wait_at_maxvals()
         savestring = \
-            '# gatevoltage(V), temp(K), voltage(V), current(A), R_4pt(W)'
+            '# gatevoltage(V), temp(K), voltage(V), current(A), R_4pt(W), gatecurrent [A]'
         self.create_savefile(savestring)
         self.init_ramp_parameters()
         try:
@@ -126,6 +127,10 @@ class Gatesweep(Measurement):
 
     def start_gatesweep(self):
         # benchslope = False
+        print('Slowly going to gatevoltage {}'.format(self.source_val))
+        for i in np.linspace(0, self.source_val, 30):
+            self.meter.set_voltage(i)
+            time.sleep(0.3)
         x = []
         y = []
         r = []
@@ -155,10 +160,10 @@ class Gatesweep(Measurement):
             gc.append(gatecurrent)
             
 
-            ax.plot(x, meterI_list, 'k.')
-            ax1.plot(x, gc, 'k.')
-            plt.draw()
-            plt.pause(0.01)
+            # ax.plot(x, meterI_list, 'k.')
+            # ax1.plot(x, gc, 'k.')
+            # plt.draw()
+            # plt.pause(0.01)
             # Write values to file
             writedict = {
                 'Gatevoltage': self.gatevoltage,
@@ -171,6 +176,7 @@ class Gatesweep(Measurement):
             for i in writedict:
                 self.savefile.write('{} ,'.format(str(writedict[i]).strip()))
             self.savefile.write("\n")
+            self.savefile.flush()
 
             # Set gatevoltage to next value
             self.ramp_gatevoltage()
