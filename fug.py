@@ -22,7 +22,6 @@ class GrapheneGrowth(QMainWindow):
         self.init_crystal_values()
         self.init_graph()
         self.init_port_selection()
-        self.UI.StatusLabel.setDragEnabled()
         self.show()
 
     def init_crystal_values(self):
