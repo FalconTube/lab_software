@@ -4,7 +4,7 @@ import sys
 import os
 
 
-class Caching_System():
+class CachingSystem():
     def __init__(self):
         self.use_cache = False
         self._initial_caching = 0

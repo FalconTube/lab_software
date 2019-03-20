@@ -2,9 +2,10 @@
 
 from Classes.device_classes import *
 from Classes.measurement_class import Measurement
-
+from Classes.caching_system import CachingSystem
 
 class Gatesweep(Measurement):
+    _cache = CachingSystem()
     def __init__(self):
         self.gate = Gate(1)
         self.meter = Meter(2, four_wire=False, set_source_voltage=True)
@@ -19,6 +20,7 @@ class Gatesweep(Measurement):
         try:
             self.start_gatesweep()
         except KeyboardInterrupt:
+            self.meter.set_voltage(0)
             self.gate.set_gatevoltage(0)
             self.finish_measurement()
 
@@ -59,35 +61,6 @@ class Gatesweep(Measurement):
                 self.finish_measurement()
         self.metervoltage = round(self.metervoltage, self.precision)
 
-    def benchmark_slope(self, x, y):
-        """ Uses first few measurement points to generate initial slope.
-            CURRENTLY NOT IN USE
-        """
-        x = np.asarray(x)
-        y = np.asarray(y)
-        if len(x) > 5:
-            slope, b = np.polyfit(x[:5], y[:5], 1)
-            plt.plot(x[:5], self.linear(x[:5], slope, b), 'g-')
-            return slope
-        else:
-            return False
-
-    def linear(self, x, m, b):
-        ''' Return linear function '''
-        return m*x + b
-
-    def check_slope(self, x, y, benchslope, saveval):
-        """ Checks, if the slope exceeds a given value. If this is the case,
-            it stops the program and prompts user to take action.
-            CURRENTLY NOT IN USE
-        """
-        slope, b = np.polyfit(x[-2:], y[-2:], 1)
-        if slope > saveval*benchslope:
-            print("Measured slope exceeds save value. Stopping Program...")
-            # plt.plot(x[-2:], linear(x[-2:], slope, b), 'r-')
-            return False
-        else:
-            return True
 
     def ask_parameters(self):
         ''' Define measurement range based on CLI user input '''
@@ -131,13 +104,19 @@ class Gatesweep(Measurement):
         y = []
         r = []
         gc = []
+        mI_list = []
         fig = plt.figure()
         ax = fig.add_subplot(211)
         ax.set_xlabel('Meter Voltage [V]')
-        ax.set_ylabel('Resistance [Ohm]')
+        ax.set_ylabel('Current [A]')
+        #ax.set_ylabel('Resistance [Ohm]')
         ax1 = fig.add_subplot(212)
         ax1.set_ylabel('Gatecurrent [A]')
-        self.gate.set_gatevoltage(self.gate_voltage)
+        for i in np.linspace(0, self.gate_voltage, 30):
+            print('setting gate to {}'.format(i))
+            self.gate.set_gatevoltage(i)
+            time.sleep(0.1)
+        #self.gate.set_gatevoltage(self.gate_voltage)
         plt.tight_layout()
         while 1:
             # Set gatevoltage and measure values
@@ -154,12 +133,12 @@ class Gatesweep(Measurement):
             y.append(meterV)
             r.append(meterV/meterI)
             gc.append(gatecurrent)
-            
+            mI_list.append(meterI)
 
-            ax.plot(x, r, 'k.')
+            ax.plot(x, mI_list, 'k.')
             ax1.plot(x, gc, 'k.')
-            plt.draw()
-            plt.pause(0.01)
+            # plt.draw()
+            # plt.pause(0.01)
             # Write values to file
             writedict = {
                 'Gatevoltage': self.gate_voltage,
@@ -172,9 +151,15 @@ class Gatesweep(Measurement):
             for i in writedict:
                 self.savefile.write('{} ,'.format(str(writedict[i]).strip()))
             self.savefile.write("\n")
+            self.savefile.flush()
 
             # Set gatevoltage to next value
             self.ramp_gatevoltage()
+
+        plt.draw()
+        plt.pause(0.01)
+        self.meter.set_voltage(0)
+        self.gate.set_gatevoltage(0)
         # save figure file as png
         # figname = fn.split('.')[0] + '_mobility.png'
         # plt.savefig(self.savename_png)

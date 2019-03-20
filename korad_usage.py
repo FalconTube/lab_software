@@ -7,7 +7,7 @@ import sys
 
 
 class UseKorad(KoradSerial, Measurement):
-    _cache = CachingSystem
+    _cache = CachingSystem()
     def __init__(self):
         try:
             self.korad = KoradSerial('COM5')
@@ -23,7 +23,7 @@ class UseKorad(KoradSerial, Measurement):
                 pass
             self.korad.output.on()
             # print('Would put output on now.')
-        except:
+        except ValueError:
             print('Cannot turn on the Korad. Exiting... ')
             sys.exit()
 

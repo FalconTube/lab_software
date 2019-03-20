@@ -2,20 +2,23 @@
 
 from Classes.device_classes import *
 from Classes.measurement_class import Measurement
+from Classes.caching_system import CachingSystem
 
 
 class Gatesweep(Measurement):
+    _cache = CachingSystem()
     def __init__(self):
         self.gate = Gate(1)
         # self.meter = Meter(2, four_wire=False, curr_source=1E-6)
         inp_volt = float(self._cache.cache_input('Define Volt source (default=0.1V): ', 0.1))
-        self.meter = Meter(2, four_wire=False, set_source_voltage=True, volt_source=inp_volt)
+        self.source_val = inp_volt
+        self.meter = Meter(2, four_wire=False, set_source_voltage=True, source_val=inp_volt)
         self.lakeshore = Lakeshore()
         self.ask_savename()
         self.ask_parameters()
         self.wait_max = self.ask_wait_at_maxvals()
         savestring = \
-            '# gatevoltage(V), temp(K), voltage(V), current(A), R_4pt(W)'
+            '# gatevoltage(V), temp(K), voltage(V), current(A), R_4pt(W), gatecurrent [A]'
         self.create_savefile(savestring)
         self.init_ramp_parameters()
         try:
@@ -124,14 +127,19 @@ class Gatesweep(Measurement):
 
     def start_gatesweep(self):
         # benchslope = False
+        print('Slowly going to gatevoltage {}'.format(self.source_val))
+        for i in np.linspace(0, self.source_val, 30):
+            self.meter.set_voltage(i)
+            time.sleep(0.3)
         x = []
         y = []
         r = []
         gc = []
+        meterI_list = []
         fig = plt.figure()
         ax = fig.add_subplot(211)
         ax.set_xlabel('Gatevoltage [V]')
-        ax.set_ylabel('Resistance')
+        ax.set_ylabel('Current [A]')
         ax1 = fig.add_subplot(212)
         ax1.set_ylabel('Gatecurrent [A]')
         plt.tight_layout()
@@ -148,13 +156,14 @@ class Gatesweep(Measurement):
             x.append(self.gatevoltage)
             y.append(meterV)
             r.append(meterV/meterI)
+            meterI_list.append(meterI)
             gc.append(gatecurrent)
             
 
-            ax.plot(x, r, 'k.')
-            ax1.plot(x, gc, 'k.')
-            plt.draw()
-            plt.pause(0.01)
+            # ax.plot(x, meterI_list, 'k.')
+            # ax1.plot(x, gc, 'k.')
+            # plt.draw()
+            # plt.pause(0.01)
             # Write values to file
             writedict = {
                 'Gatevoltage': self.gatevoltage,
@@ -167,6 +176,7 @@ class Gatesweep(Measurement):
             for i in writedict:
                 self.savefile.write('{} ,'.format(str(writedict[i]).strip()))
             self.savefile.write("\n")
+            self.savefile.flush()
 
             # Set gatevoltage to next value
             self.ramp_gatevoltage()
