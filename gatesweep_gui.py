@@ -32,6 +32,7 @@ class MainWindow(QMainWindow):
             # i.close()
         print('Closed Controllers. Goodbye!')
 
+
     def init_graph(self, single=False):
         self.graphicsview = self.UI.GSView
         xlabel = 'Time [s]' if single else 'Gatevoltage [V]'
@@ -118,7 +119,7 @@ class MainWindow(QMainWindow):
         self.UI.GateConnectButton.released.connect(self.init_gate)
         self.UI.KMeterConnectButton.released.connect(self.init_kmeter)
         self.UI.LMeterConnectButton.released.connect(self.init_lmeter)
-        self.UI.StartGSButton.released.connect(self.start_gatesweep)
+        self.UI.StartSweepButton.released.connect(self.start_gatesweep)
         self.UI.SavenameButton.released.connect(self.choose_savename)
         self.UI.StartResButton.released.connect(self.start_resmeas)
         self.UI.AutoGainButton.released.connect(self.set_autogain_time)
@@ -175,8 +176,8 @@ class MainWindow(QMainWindow):
 
     def start_gatesweep(self):
         self.init_graph()
-        minvoltage = self.UI.MinGateBox.value()
-        maxvoltage = self.UI.MaxGateBox.value()
+        minvoltage = self.UI.MinSweepBox.value()
+        maxvoltage = self.UI.MaxSweepBox.value()
         stepsize = self.UI.StepsizeBox.value()
         waittime = self.UI.WaittimeBox.value()
         wait_max = True if self.UI.MaxCheckbox.isChecked() else False
@@ -189,12 +190,14 @@ class MainWindow(QMainWindow):
                 stepsize, waittime, wait_max, wait_max_time, savefile,
                 self.plot, self.plot_lower, benny_hill)
         # Also connect abort button now
-        self.UI.StopGSButton.released.connect(self.gs.stop_gs)
+        self.UI.StopSweepButton.released.connect(self.gs.stop)
+        self.start_in_thread(self.gs)
 
+    def start_in_thread(self, target):
         self.thread = QtCore.QThread(self)
-        self.gs.finished_gs.connect(self.gs_callback)
-        self.gs.moveToThread(self.thread)
-        self.thread.started.connect(self.gs.start)
+        target.finished_sweep.connect(self.sweep_callback)
+        target.moveToThread(self.thread)
+        self.thread.started.connect(target.start)
         self.UI.GatesweepLabel.setText('Measuring!')
         self.UI.GatesweepLabel.setStyleSheet('color: red')
         self.thread.start()
@@ -208,15 +211,9 @@ class MainWindow(QMainWindow):
         savefile = self.savename
         self.res = ResLogger(self.meter, self.savename, self.plot, self.plot_lower)
         # Also connect abort button now
-        self.UI.StopResButton.released.connect(self.res.stop_res)
+        self.UI.StopResButton.released.connect(self.res.stop)
+        self.start_in_thread(self.res)
 
-        self.thread = QtCore.QThread(self)
-        self.res.finished_gs.connect(self.gs_callback)
-        self.res.moveToThread(self.thread)
-        self.thread.started.connect(self.res.start)
-        self.UI.GatesweepLabel.setText('Measuring!')
-        self.UI.GatesweepLabel.setStyleSheet('color: red')
-        self.thread.start()
 
     def set_autogain_time(self):
         auto_gain = self.UI.GainTimeBox.value()
@@ -225,17 +222,17 @@ class MainWindow(QMainWindow):
         except:
             pass
 
-    def gs_callback(self):
-        self.UI.GatesweepLabel.setText('Idle')
-        self.UI.GatesweepLabel.setStyleSheet('color: black')
+    def sweep_callback(self):
+        self.UI.SweepLabel.setText('Idle')
+        self.UI.SweepLabel.setStyleSheet('color: black')
 
-
-class Gatesweep(QtCore.QObject):
-    finished_gs = QtCore.pyqtSignal(bool)
-    def __init__(self, gate, meter, minvoltage, maxvoltage, stepsize, waittime,
-            wait_max, wait_max_time, savename, plot, plot_lower, enable_music):
+class Sweep(QtCore.QObject):
+    finished_sweep = QtCore.pyqtSignal(bool)
+    def __init__(self, minvoltage, maxvoltage, stepsize,
+            waittime, wait_max, wait_max_time, savename, plot, plot_lower,
+            enable_music):
         QtCore.QObject.__init__(self)
-        # Implement benny music for fun!
+        # Music implementation for fun
         self.playlist = QMediaPlaylist()
         path_to_music = os.path.abspath('benny_hill.mp3')
         self.url = QtCore.QUrl.fromLocalFile(path_to_music)
@@ -243,10 +240,7 @@ class Gatesweep(QtCore.QObject):
         #self.playlist.setPlaybackMode(QMediaPlaylist.Loop)
         self.music = QMediaPlayer()
         self.music.setPlaylist(self.playlist)
-        # End of music implementation
-        self.gate = gate
-        self.meter = meter
-        self.lakeshore = Lakeshore()
+        # End of Music section
         self.minvoltage = minvoltage
         self.maxvoltage = maxvoltage
         self.stepsize = stepsize
@@ -257,9 +251,6 @@ class Gatesweep(QtCore.QObject):
         self.plot = plot
         self.plot_lower = plot_lower
         self.enable_music = enable_music
-        savestring = \
-                '# gatevoltage(V), temp(K), voltage(V), current(A), R_4pt(W)'
-        self.create_savefile(savestring)
         self.init_ramp_parameters()
 
     def create_savefile(self, savestring):
@@ -269,44 +260,101 @@ class Gatesweep(QtCore.QObject):
 
 
     def init_ramp_parameters(self):
-        ''' Initializes counters, necessary for self.ramp_gatevoltage() '''
-        self.gatevoltage = 0
+        ''' Initializes counters, necessary for self.ramp_sweepvoltage() '''
+        self.sweepvoltage = 0
         self.lastvoltage = 0
         self.finishedcounter = 0
         self.maxcounter = 0
 
-    def ramp_gatevoltage(self):
-        ''' Increments the gatevoltage and finishes the measurement '''
-        if self.gatevoltage < self.maxvoltage and \
-                self.gatevoltage >= self.lastvoltage:
-            self.lastvoltage = self.gatevoltage
-            self.gatevoltage += self.stepsize
-        elif self.gatevoltage == self.maxvoltage:
+    def ramp_sweepvoltage(self):
+        ''' Increments the sweepvoltage and finishes the measurement '''
+        if self.sweepvoltage < self.maxvoltage and \
+                self.sweepvoltage >= self.lastvoltage:
+            self.lastvoltage = self.sweepvoltage
+            self.sweepvoltage += self.stepsize
+        elif self.sweepvoltage >= self.maxvoltage:
             if self.wait_max:
                 time.sleep(self.wait_max_time) # wait at max voltage
-            self.lastvoltage = self.gatevoltage
-            self.gatevoltage -= self.stepsize
+            self.lastvoltage = self.sweepvoltage
+            self.sweepvoltage -= self.stepsize
             self.maxcounter += 1
-        elif self.gatevoltage > self.minvoltage and \
-                self.gatevoltage < self.lastvoltage:
-            self.lastvoltage = self.gatevoltage
-            self.gatevoltage -= self.stepsize
-        elif self.gatevoltage == self.minvoltage:
-            self.lastvoltage = self.gatevoltage
-            self.gatevoltage += self.stepsize
+        elif self.sweepvoltage > self.minvoltage and \
+                self.sweepvoltage < self.lastvoltage:
+            self.lastvoltage = self.sweepvoltage
+            self.sweepvoltage -= self.stepsize
+        elif self.sweepvoltage <= self.minvoltage:
+            self.lastvoltage = self.sweepvoltage
+            self.sweepvoltage += self.stepsize
             self.maxcounter += 1
         if self.maxvoltage >= 0 and self.minvoltage >= 0:
             if self.maxcounter == 2:
-                self.stop_gs()
-        if self.gatevoltage == 0:
+                self.stop()
+        if self.sweepvoltage == 0:
             self.finishedcounter += 1
             if self.finishedcounter == 2:
-                self.stop_gs()
+                self.stop()
+
+    def stop(self):
+        self.measuring = False
+
+    def slowly_to_voltage(self, target, device):
+        if target != 0:
+            volt_steps = np.linspace(0, target, 50)
+        else:
+            now_volts = device.read_voltage()
+            volt_steps = np.linspace(now_volts, 0, 50)
+        for i in volt_steps:
+            device.set_voltage(i)
+            time.sleep(0.2)
+
+    def finish_sweep(self, x, y_up, y_low, xlabel='', y_uplabel='', y_lowlabel=''):
+        # Here the measurement is aborted or finished
+        try:
+            self.slowly_to_voltage(0, self.gate)
+            # self.slowly_to_voltage(0, meter)
+        except:
+            pass
+
+        self.savefile.close()
+        # After finishing, plot it once in mpl
+        fig = plt.figure()
+        ax = fig.add_subplot(211)
+        ax1 = fig.add_subplot(212)
+        basename = os.path.basename(self.savename)
+        fig.suptitle(os.path.splitext(basename))
+        ax.set_ylabel(y_uplabel)
+        ax1.set_xlabel(xlabel)
+        ax1.set_ylabel(y_lowlabel)
+        ax.plot(x, y_up, 'k.')
+        ax1.plot(x, y_low, 'k.')
+        # save figure file as png
+        savename_png = os.path.splitext(self.savename)[0] + '.png'
+        fig.tight_layout()
+        fig.savefig(savename_png)
+
+
+class Gatesweep(Sweep):
+    def __init__(self, gate, meter, minvoltage, maxvoltage, stepsize, waittime,
+            wait_max, wait_max_time, savename, plot, plot_lower, enable_music):
+
+        # Inits
+        super().__init__(minvoltage, maxvoltage, stepsize, waittime,
+            wait_max, wait_max_time, savename, plot, plot_lower, enable_music)
+        QtCore.QObject.__init__(self)
+
+        self.gate = gate
+        self.meter = meter
+        self.lakeshore = Lakeshore()
+        savestring = \
+                '# gatevoltage(V), temp(K), voltage(V), current(A), R_4pt(W)'
+        self.create_savefile(savestring)
+        self.init_ramp_parameters()
+
 
     @QtCore.pyqtSlot()
     def start(self):
         self.start_gatesweep()
-        self.finished_gs.emit(True)
+        self.finished_sweep.emit(True)
 
     def start_gatesweep(self):
         if self.enable_music:
@@ -318,7 +366,7 @@ class Gatesweep(QtCore.QObject):
         gc = []
         while self.measuring:
             # Set gatevoltage and measure values
-            self.gate.set_gatevoltage(self.gatevoltage)
+            self.gate.set_voltage(self.gatevoltage)
             time.sleep(self.waittime)
             meterV = self.meter.read_voltage()
             meterI = self.meter.read_current()
@@ -349,31 +397,12 @@ class Gatesweep(QtCore.QObject):
             # Set gatevoltage to next value
             self.ramp_gatevoltage()
         self.music.stop()
+        self.finish_sweep(x, r, gc, 'Gatevoltage [V]', r'Resistance [$\Omega$]',
+                'Gatecurrent [A]')
 
-        # Here the measurement is aborted or finished
-        self.gate.set_gatevoltage(0)
-        self.savefile.close()
-        # After finishing, plot it once in mpl
-        fig = plt.figure()
-        ax = fig.add_subplot(211)
-        ax1 = fig.add_subplot(212)
-        basename = os.path.basename(self.savename)
-        fig.suptitle(os.path.splitext(basename))
-        ax.set_ylabel(r'Resistance [$\Omega$]')
-        ax1.set_xlabel('Gatevoltage [V]')
-        ax1.set_ylabel('Gatecurrent [A]')
-        ax.plot(x, r, 'k.')
-        ax1.plot(x, gc, 'k.')
-        # save figure file as png
-        savename_png = os.path.splitext(self.savename)[0] + '.png'
-        fig.tight_layout()
-        fig.savefig(savename_png)
-
-    def stop_gs(self):
-        self.measuring = False
 
 class ResLogger(QtCore.QObject):
-    finished_gs = QtCore.pyqtSignal(bool)
+    finished_sweep = QtCore.pyqtSignal(bool)
     def __init__(self, meter, savename, plot, plot_lower):
         QtCore.QObject.__init__(self)
     #def __init__(self, meter, savename, plot, autogain_time, meterI):
@@ -418,9 +447,7 @@ class ResLogger(QtCore.QObject):
                     reset_start = time.time()
             meterV = float(self.meter.read_voltage())
             meterI = self.meter.read_current()
-            #meterI = self.meterI# ampere
             temperature = self.lakeshore.read_temp()
-            #resistance = meterV / meterI * four_point_fac           #with van der pauw geometrie
             resistance = meterV / meterI                             #without van der pauw geometrie
 
             temps.append(temperature)
@@ -438,8 +465,10 @@ class ResLogger(QtCore.QObject):
                     time_elapsed, meterV, resistance, temperature
                 )
             )
+        self.finished_sweep(t, r, temps, 'Time [s]', r'Resistance [$\Omega$]',
+                'Temperature [K]')
 
-    def stop_res(self):
+    def stop(self):
         self.measuring = False
 
 

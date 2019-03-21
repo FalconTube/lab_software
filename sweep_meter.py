@@ -23,7 +23,7 @@ class Gatesweep(Measurement):
         try:
             self.start_gatesweep()
         except KeyboardInterrupt:
-            self.gate.set_gatevoltage(0)
+            self.gate.set_voltage(0)
             self.finish_measurement()
 
     def init_ramp_parameters(self):
@@ -141,7 +141,7 @@ class Gatesweep(Measurement):
         ax.ylabel('Resistance [Ohm]')
         ax1 = fig.add_subplot(212)
         ax1.ylabel('Gatecurrent [A]')
-        self.gate.set_gatevoltage(self.gate_voltage)
+        self.gate.set_voltage(self.gate_voltage)
         while 1:
             # Set gatevoltage and measure values
             print('Gatevoltage = {}'.format(self.metervoltage))

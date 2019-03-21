@@ -154,11 +154,11 @@ class Gatesweep(Measurement):
         ax1.set_ylabel("Gatecurrent [A]")
         print('Setting Gatevoltage to {}'.format(self.minvoltage))
         self.gatevoltage = self.minvoltage
-        self.gate.set_gatevoltage(self.gatevoltage)
+        self.gate.set_voltage(self.gatevoltage)
         while 1:
             # Set gatevoltage and measure values
             print('Gatevoltage = {}'.format(self.gatevoltage))
-            self.gate.set_gatevoltage(self.gatevoltage)  
+            self.gate.set_voltage(self.gatevoltage)  
             time.sleep(self.waittime)
             meterV = self.meter.read_voltage() 
             meterI = self.meter.read_current() 

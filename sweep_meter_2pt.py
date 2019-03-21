@@ -21,7 +21,7 @@ class Gatesweep(Measurement):
             self.start_gatesweep()
         except KeyboardInterrupt:
             self.meter.set_voltage(0)
-            self.gate.set_gatevoltage(0)
+            self.gate.set_voltage(0)
             self.finish_measurement()
 
     def init_ramp_parameters(self):
@@ -114,9 +114,9 @@ class Gatesweep(Measurement):
         ax1.set_ylabel('Gatecurrent [A]')
         for i in np.linspace(0, self.gate_voltage, 30):
             print('setting gate to {}'.format(i))
-            self.gate.set_gatevoltage(i)
+            self.gate.set_voltage(i)
             time.sleep(0.1)
-        #self.gate.set_gatevoltage(self.gate_voltage)
+        #self.gate.set_voltage(self.gate_voltage)
         plt.tight_layout()
         while 1:
             # Set gatevoltage and measure values
@@ -159,7 +159,7 @@ class Gatesweep(Measurement):
         plt.draw()
         plt.pause(0.01)
         self.meter.set_voltage(0)
-        self.gate.set_gatevoltage(0)
+        self.gate.set_voltage(0)
         # save figure file as png
         # figname = fn.split('.')[0] + '_mobility.png'
         # plt.savefig(self.savename_png)

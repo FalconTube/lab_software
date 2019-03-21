@@ -8,7 +8,7 @@ import time
 class Quarz(Measurement):
     def __init__(self):
         self.gate = Gate(1)
-        self.gate.set_gatevoltage(0)
+        self.gate.set_voltage(0)
         self.gate.close()
         self.ask_savename()
         savestring = '# Time [s], Temperature [K], Resistance [Ohm], Deposit rate [Angstrom/s]'

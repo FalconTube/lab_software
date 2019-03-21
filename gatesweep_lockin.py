@@ -30,7 +30,7 @@ class Gatesweep(Measurement):
         try:
             self.start_gatesweep()
         except KeyboardInterrupt:
-            self.gate.set_gatevoltage(0)
+            self.gate.set_voltage(0)
             self.finish_measurement()
 
     def init_ramp_parameters(self):
@@ -146,7 +146,7 @@ class Gatesweep(Measurement):
         while 1:
             # Set gatevoltage and measure values
             print('Gatevoltage = {}'.format(self.gatevoltage))
-            self.gate.set_gatevoltage(self.gatevoltage)
+            self.gate.set_voltage(self.gatevoltage)
             time.sleep(self.waittime)
             meterV = self.meter.read_voltage()
             meterV = float(meterV.strip())

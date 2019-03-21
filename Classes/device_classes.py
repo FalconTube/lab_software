@@ -77,7 +77,7 @@ class Gate(Keithley):
         for i in gate_setup:
             self.gate.write(i)
 
-    def set_gatevoltage(self, value):
+    def set_voltage(self, value):
         self.gate.write(':SOUR:VOLT:LEV {}'.format(value))
 
 
