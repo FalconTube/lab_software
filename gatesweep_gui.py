@@ -51,7 +51,7 @@ class MainWindow(QMainWindow):
         self.graph.showAxis("right")
         self.graph.getAxis("right").tickStrings = lambda x,y,z: ["" for value in x]
         self.graph.showAxis("top")
-        self.graph.getAxis("top").tickStrings = lambda x,y,z: ["" for value in x]
+        #self.graph.getAxis("top").tickStrings = lambda x,y,z: ["" for value in x]
         #self.graph.setTitle('Gatesweep')
         self.graph.setLabel("left", y_uplabel)
         self.graph.setLabel("bottom", xlabel)
@@ -145,7 +145,7 @@ class MainWindow(QMainWindow):
             self.gate = Gate(port, compliance)
             self.gate.slowly_to_target(fixed_volt)
             self.label_connected(self.UI.GateLabel)
-        except:
+        except ValueError:
             self.label_failed(self.UI.GateLabel)
 
     def init_kmeter(self):
@@ -179,7 +179,6 @@ class MainWindow(QMainWindow):
 
 
     def start_sweep(self):
-        self.init_graph()
         minvoltage = self.UI.MinSweepBox.value()
         maxvoltage = self.UI.MaxSweepBox.value()
         stepsize = self.UI.StepsizeBox.value()
@@ -196,15 +195,15 @@ class MainWindow(QMainWindow):
             self.gs = Sweep(self.gate, self.meter, minvoltage, maxvoltage,
                     stepsize, waittime, wait_max, wait_max_time, savefile,
                     self.plot, self.plot_lower, 'GateV',
-                    'Resistance', 'GateI', benny_hill)
+                    'Resistance', 'GateI', benny_hill, False)
         else:
             # Then we sweep the meter, so change gate and meter
             axes = ['MeterV', 'MeterI', 'GateI']
             self.init_graph(axes)
-            self.gs = Sweep(self.meter, self.gate, minvoltage, maxvoltage,
+            self.gs = Sweep(self.gate, self.meter, minvoltage, maxvoltage,
                 stepsize, waittime, wait_max, wait_max_time, savefile,
                 self.plot, self.plot_lower, 'MeterV',
-                'MeterI', 'GateI', benny_hill)
+                'MeterI', 'GateI', benny_hill, True)
 
         # Also connect abort button now
         self.UI.StopSweepButton.released.connect(self.gs.stop)
@@ -215,8 +214,8 @@ class MainWindow(QMainWindow):
         target.finished_sweep.connect(self.sweep_callback)
         target.moveToThread(self.thread)
         self.thread.started.connect(target.start)
-        self.UI.GatesweepLabel.setText('Measuring!')
-        self.UI.GatesweepLabel.setStyleSheet('color: red')
+        self.UI.SweepLabel.setText('Measuring!')
+        self.UI.SweepLabel.setStyleSheet('color: red')
         self.thread.start()
 
     def start_resmeas(self):
@@ -261,7 +260,7 @@ class Sweep(QtCore.QObject):
     finished_sweep = QtCore.pyqtSignal(bool)
     def __init__(self, gate, meter, minvoltage, maxvoltage, stepsize,
             waittime, wait_max, wait_max_time, savename, plot, plot_lower,
-            x_name, yup_name, ylow_name, enable_music):
+            x_name, yup_name, ylow_name, enable_music, is_sd_sweep):
         QtCore.QObject.__init__(self)
         # Music implementation for fun
         self.playlist = QMediaPlaylist()
@@ -286,6 +285,7 @@ class Sweep(QtCore.QObject):
         self.x_name = x_name
         self.yup_name = yup_name
         self.ylow_name = ylow_name
+        self.is_sd_sweep = is_sd_sweep
         self.enable_music = enable_music
         # End of parameters
         self.init_ramp_parameters()
@@ -303,16 +303,22 @@ class Sweep(QtCore.QObject):
 
 
     def start_sweep(self):
-        if self.meter.set_source_voltage:
-            self.slowly_to_target(self.meter.source_val, self.meter, voltage=True)
-        else:
-            self.slowly_to_target(self.meter.source_val, self.meter, voltage=False)
+        if not self.is_sd_sweep:
+            if self.meter.set_source_voltage:
+                self.slowly_to_target(self.meter.source_val, self.meter, voltage=True)
+            else:
+                self.slowly_to_target(self.meter.source_val, self.meter, voltage=False)
+        #else:
+            #self.slowly_to_target(self.meter.source_val, self.meter, voltage=True)
         if self.enable_music:
             self.music.play()
         self.measuring = True
         while self.measuring:
             # Set gatevoltage and measure values
-            self.gate.set_voltage(self.sweepvoltage)
+            if not self.is_sd_sweep:
+                self.gate.set_voltage(self.sweepvoltage)
+            else:
+                self.meter.set_voltage(self.sweepvoltage)
             time.sleep(self.waittime)
             meterV = self.meter.read_voltage()
             meterI = self.meter.read_current()
@@ -345,7 +351,7 @@ class Sweep(QtCore.QObject):
             # Set gatevoltage to next value
             self.ramp_sweepvoltage()
         self.music.stop()
-        self.finish_sweep(x, r, gc, self.x_name, self.yup_name, self.ylow_name)
+        self.finish_sweep(self.x, self.r, self.gc, self.x_name, self.yup_name, self.ylow_name)
 
     def create_savefile(self, savestring):
         ''' Creates savefile and generates header '''
@@ -358,7 +364,7 @@ class Sweep(QtCore.QObject):
         self.r = []
         self.mI = []
         self.gc = []
-        plotdict = {
+        self.plotdict = {
                 'GateV' : self.x,
                 'MeterV' : self.y,
                 'Resistance' : self.r,
@@ -369,7 +375,8 @@ class Sweep(QtCore.QObject):
 
     def select_plot_values(self):
         self.plotx, self.plot_yup, self.plot_ylow = \
-                plotdict[self.x_name, self.yup_name, self.ylow_name]
+                self.plotdict[self.x_name], self.plotdict[self.yup_name],\
+                self.plotdict[self.ylow_name]
 
 
     def init_ramp_parameters(self):
@@ -402,7 +409,7 @@ class Sweep(QtCore.QObject):
         if self.maxvoltage >= 0 and self.minvoltage >= 0:
             if self.maxcounter == 2:
                 self.stop()
-        if self.sweepvoltage == 0:
+        if round(self.sweepvoltage,2) == 0:
             self.finishedcounter += 1
             if self.finishedcounter == 2:
                 self.stop()
@@ -416,12 +423,20 @@ class Sweep(QtCore.QObject):
         return False
 
     def slowly_to_target(self, target, device, voltage=False):
-        if target != 0:
-            volt_steps = np.linspace(0, target, 50)
+        if voltage:
+            now_val = round(device.read_voltage(),8)
+            steps = np.linspace(now_val, target, 20)
         else:
-            now_volts = device.read_voltage()
-            volt_steps = np.linspace(now_volts, 0, 50)
-        for i in volt_steps:
+            now_val = round(device.read_current(),8)
+            steps = np.linspace(now_val, target, 20)
+        print(now_val, target)
+        if now_val == target:
+            return
+        # Need to reverse steps if going downwards
+        if now_val > abs(target):
+            steps = steps[::-1]
+
+        for i in steps:
             if voltage:
                 device.set_voltage(i)
             else:

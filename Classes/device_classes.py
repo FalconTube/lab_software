@@ -51,18 +51,25 @@ class Keithley():
         return self.resistance
 
     def set_voltage(self, value):
-        self.write(':SOUR:VOLT:LEV {}'.format(value))
+        self.keithley.write(':SOUR:VOLT:LEV {}'.format(value))
 
     def set_current(self, value):
-        self.write(':SOUR:CURR:LEV {}'.format(value))
+        self.keithley.write(':SOUR:CURR:LEV {}'.format(value))
 
     def slowly_to_target(self, target, voltage=False):
-        if target != 0:
-            volt_steps = np.linspace(0, target, 50)
+        if voltage:
+            now_val = round(self.read_voltage(),8)
+            steps = np.linspace(now_val, target, 20)
         else:
-            now_volts = self.read_voltage()
-            volt_steps = np.linspace(now_volts, 0, 50)
-        for i in volt_steps:
+            now_val = round(self.read_current(),8)
+            steps = np.linspace(now_val, target, 20)
+        if now_val == target:
+            return
+        # Need to reverse steps if going downwards
+        if now_val > abs(target):
+            steps = steps[::-1]
+
+        for i in steps:
             if voltage:
                 self.set_voltage(i)
             else:
@@ -99,6 +106,10 @@ class Gate(Keithley):
     def set_voltage(self, value):
         self.gate.write(':SOUR:VOLT:LEV {}'.format(value))
 
+    def set_current(self, value):
+        self.gate.write(':SOUR:CURR:LEV {}'.format(value))
+
+
 
 class Meter(Keithley):
     def __init__(self, gpibnum, source_val=0.00001, four_wire=True,
@@ -129,7 +140,7 @@ class Meter(Keithley):
                 # Turn on 4-wire sensing
                 ':SYST:RSEN {}'.format(self.fwire_str),
                 # Set current source to 10 uA
-                ':SOUR:CURR:LEV {}'.format(self.source_val),
+                # ':SOUR:CURR:LEV {}'.format(self.source_val),
                 ':OUTP ON'
             ]
         else:
