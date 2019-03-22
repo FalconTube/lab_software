@@ -33,9 +33,9 @@ class MainWindow(QMainWindow):
         print('Closed Controllers. Goodbye!')
 
 
-    def init_graph(self, single=False):
+    def init_graph(self, axes, single=False):
         self.graphicsview = self.UI.GSView
-        xlabel = 'Time [s]' if single else 'Gatevoltage [V]'
+        xlabel, y_uplabel, y_lowlabel = axes
         try:
             self.graphicsview.removeItem(self.graph)
             self.graphicsview.removeItem(self.graph_lower)
@@ -52,8 +52,8 @@ class MainWindow(QMainWindow):
         self.graph.getAxis("right").tickStrings = lambda x,y,z: ["" for value in x]
         self.graph.showAxis("top")
         self.graph.getAxis("top").tickStrings = lambda x,y,z: ["" for value in x]
-        self.graph.setTitle('Gatesweep')
-        self.graph.setLabel("left", "Resistance [Ohm]")
+        #self.graph.setTitle('Gatesweep')
+        self.graph.setLabel("left", y_uplabel)
         self.graph.setLabel("bottom", xlabel)
 
         if not single:
@@ -67,8 +67,8 @@ class MainWindow(QMainWindow):
             self.graph_lower.getAxis("right").tickStrings = lambda x,y,z: ["" for value in x]
             self.graph_lower.showAxis("top")
             self.graph_lower.getAxis("top").tickStrings = lambda x,y,z: ["" for value in x]
-            self.graph_lower.setTitle('Leakage')
-            self.graph_lower.setLabel("left", "Gatecurrent [A]")
+            #self.graph_lower.setTitle('Leakage')
+            self.graph_lower.setLabel("left", y_lowlabel)
             self.graph_lower.setLabel("bottom", xlabel)
 
     def init_save(self, savepath=None):
@@ -119,10 +119,11 @@ class MainWindow(QMainWindow):
         self.UI.GateConnectButton.released.connect(self.init_gate)
         self.UI.KMeterConnectButton.released.connect(self.init_kmeter)
         self.UI.LMeterConnectButton.released.connect(self.init_lmeter)
-        self.UI.StartSweepButton.released.connect(self.start_gatesweep)
+        self.UI.StartSweepButton.released.connect(self.start_sweep)
         self.UI.SavenameButton.released.connect(self.choose_savename)
         self.UI.StartResButton.released.connect(self.start_resmeas)
         self.UI.AutoGainButton.released.connect(self.set_autogain_time)
+        self.UI.FixedGateBox.valueChanged.connect(self.change_gate_voltage)
 
     def label_connected(self, label):
         label.setText('Connected')
@@ -139,8 +140,10 @@ class MainWindow(QMainWindow):
     def init_gate(self):
         port = self.UI.GatePortBox.currentText()
         compliance = self.UI.GateComplianceBox.value()
+        fixed_volt = self.UI.FixedGateBox.value()
         try:
             self.gate = Gate(port, compliance)
+            self.gate.slowly_to_target(fixed_volt)
             self.label_connected(self.UI.GateLabel)
         except:
             self.label_failed(self.UI.GateLabel)
@@ -148,14 +151,15 @@ class MainWindow(QMainWindow):
     def init_kmeter(self):
         port = self.UI.KMeterPortBox.currentText()
         fwire = True if self.UI.WireCheckBox.isChecked() else False
-        vsource = self.UI.VSourceBox.value()
+        source_volt = True if self.UI.SourceVoltsRadio.isChecked() else False
+        source_val = self.UI.SourceValBox.value()
         try:
             self.meter.close()
             self.label_idle(self.UI.LMeterLabel)
         except:
             pass
         try:
-            self.meter = Meter(port, vsource, fwire)
+            self.meter = Meter(port, source_val, fwire, source_volt)
             self.label_connected(self.UI.KMeterLabel)
         except:
             self.label_failed(self.UI.KMeterLabel)
@@ -174,7 +178,7 @@ class MainWindow(QMainWindow):
             self.label_failed(self.UI.LMeterLabel)
 
 
-    def start_gatesweep(self):
+    def start_sweep(self):
         self.init_graph()
         minvoltage = self.UI.MinSweepBox.value()
         maxvoltage = self.UI.MaxSweepBox.value()
@@ -186,9 +190,22 @@ class MainWindow(QMainWindow):
         self.init_save(self.savename)
         savefile = self.savename
         benny_hill = True if self.UI.BennyHillBox.isChecked() else False
-        self.gs = Gatesweep(self.gate, self.meter, minvoltage, maxvoltage,
+        if self.UI.SweepGateRadio.isChecked():
+            axes = ['GateV', 'Resistance', 'GateI']
+            self.init_graph(axes)
+            self.gs = Sweep(self.gate, self.meter, minvoltage, maxvoltage,
+                    stepsize, waittime, wait_max, wait_max_time, savefile,
+                    self.plot, self.plot_lower, 'GateV',
+                    'Resistance', 'GateI', benny_hill)
+        else:
+            # Then we sweep the meter, so change gate and meter
+            axes = ['MeterV', 'MeterI', 'GateI']
+            self.init_graph(axes)
+            self.gs = Sweep(self.meter, self.gate, minvoltage, maxvoltage,
                 stepsize, waittime, wait_max, wait_max_time, savefile,
-                self.plot, self.plot_lower, benny_hill)
+                self.plot, self.plot_lower, 'MeterV',
+                'MeterI', 'GateI', benny_hill)
+
         # Also connect abort button now
         self.UI.StopSweepButton.released.connect(self.gs.stop)
         self.start_in_thread(self.gs)
@@ -205,6 +222,7 @@ class MainWindow(QMainWindow):
     def start_resmeas(self):
         gain_time = 60
         meterI = 1E-5
+        axes = ['Time [s]', 'Resistance [Ohm]', 'Temperature [K]']
         self.init_graph()
         # Check if file exists again, user could not have changed old one
         self.init_save(self.savename)
@@ -226,11 +244,24 @@ class MainWindow(QMainWindow):
         self.UI.SweepLabel.setText('Idle')
         self.UI.SweepLabel.setStyleSheet('color: black')
 
+    def change_gate_voltage(self):
+        gateval = self.UI.FixedGateBox.value()
+        try:
+            measuring = self.sweep.get_measuring()
+            if not measuring:
+                self.gate.slowly_to_target(gateval, self.gate, True)
+        except:
+            try:
+                self.gate.slowly_to_target(gateval, self.gate, True)
+            except:
+                pass
+            pass
+
 class Sweep(QtCore.QObject):
     finished_sweep = QtCore.pyqtSignal(bool)
-    def __init__(self, minvoltage, maxvoltage, stepsize,
+    def __init__(self, gate, meter, minvoltage, maxvoltage, stepsize,
             waittime, wait_max, wait_max_time, savename, plot, plot_lower,
-            enable_music):
+            x_name, yup_name, ylow_name, enable_music):
         QtCore.QObject.__init__(self)
         # Music implementation for fun
         self.playlist = QMediaPlaylist()
@@ -241,6 +272,8 @@ class Sweep(QtCore.QObject):
         self.music = QMediaPlayer()
         self.music.setPlaylist(self.playlist)
         # End of Music section
+        self.gate = gate
+        self.meter = meter
         self.minvoltage = minvoltage
         self.maxvoltage = maxvoltage
         self.stepsize = stepsize
@@ -250,13 +283,93 @@ class Sweep(QtCore.QObject):
         self.savename = savename
         self.plot = plot
         self.plot_lower = plot_lower
+        self.x_name = x_name
+        self.yup_name = yup_name
+        self.ylow_name = ylow_name
         self.enable_music = enable_music
+        # End of parameters
         self.init_ramp_parameters()
+        self.init_measure_values()
+        self.select_plot_values()
+
+        self.gate = gate
+        self.meter = meter
+        self.lakeshore = Lakeshore()
+        savestring = \
+                '# Gatevoltage[V], Temp[K], Metervoltage[V], Metercurrent[A],'+\
+                ' R[Ohm], Gatecurrent[A]'
+        self.create_savefile(savestring)
+        self.init_ramp_parameters()
+
+
+    def start_sweep(self):
+        if self.meter.set_source_voltage:
+            self.slowly_to_target(self.meter.source_val, self.meter, voltage=True)
+        else:
+            self.slowly_to_target(self.meter.source_val, self.meter, voltage=False)
+        if self.enable_music:
+            self.music.play()
+        self.measuring = True
+        while self.measuring:
+            # Set gatevoltage and measure values
+            self.gate.set_voltage(self.sweepvoltage)
+            time.sleep(self.waittime)
+            meterV = self.meter.read_voltage()
+            meterI = self.meter.read_current()
+            temp = self.lakeshore.read_temp()
+            gatecurrent = self.gate.read_current()
+
+            self.x.append(self.sweepvoltage)
+            self.y.append(meterV)
+            self.r.append(meterV/meterI)
+            self.mI.append(meterI)
+            self.gc.append(gatecurrent)
+
+            # Write values to file
+            writedict = {
+                    'Gatevoltage': self.sweepvoltage,
+                    'T': temp,
+                    'V': meterV,
+                    'I': meterI,
+                    'R': meterV/meterI,
+                    'I_gate': gatecurrent,
+                    }
+            for i in writedict:
+                self.savefile.write('{} , '.format(str(writedict[i]).strip()))
+            self.savefile.write("\n")
+            self.savefile.flush()
+            # Plot values
+            self.plot.setData(self.plotx, self.plot_yup)
+            self.plot_lower.setData(self.plotx, self.plot_ylow)
+
+            # Set gatevoltage to next value
+            self.ramp_sweepvoltage()
+        self.music.stop()
+        self.finish_sweep(x, r, gc, self.x_name, self.yup_name, self.ylow_name)
 
     def create_savefile(self, savestring):
         ''' Creates savefile and generates header '''
         self.savefile = open(self.savename, "w")
         self.savefile.write(savestring + "\n")
+
+    def init_measure_values(self):
+        self.x = []
+        self.y = []
+        self.r = []
+        self.mI = []
+        self.gc = []
+        plotdict = {
+                'GateV' : self.x,
+                'MeterV' : self.y,
+                'Resistance' : self.r,
+                'MeterI': self.mI,
+                'GateI' : self.gc,
+                }
+
+
+    def select_plot_values(self):
+        self.plotx, self.plot_yup, self.plot_ylow = \
+                plotdict[self.x_name, self.yup_name, self.ylow_name]
 
 
     def init_ramp_parameters(self):
@@ -297,20 +410,28 @@ class Sweep(QtCore.QObject):
     def stop(self):
         self.measuring = False
 
-    def slowly_to_voltage(self, target, device):
+    def get_measuring(self):
+        if self.measuring:
+            return True
+        return False
+
+    def slowly_to_target(self, target, device, voltage=False):
         if target != 0:
             volt_steps = np.linspace(0, target, 50)
         else:
             now_volts = device.read_voltage()
             volt_steps = np.linspace(now_volts, 0, 50)
         for i in volt_steps:
-            device.set_voltage(i)
+            if voltage:
+                device.set_voltage(i)
+            else:
+                device.set_current(i)
             time.sleep(0.2)
 
     def finish_sweep(self, x, y_up, y_low, xlabel='', y_uplabel='', y_lowlabel=''):
         # Here the measurement is aborted or finished
         try:
-            self.slowly_to_voltage(0, self.gate)
+            self.slowly_to_target(0, self.gate, voltage=True)
             # self.slowly_to_voltage(0, meter)
         except:
             pass
@@ -332,73 +453,11 @@ class Sweep(QtCore.QObject):
         fig.tight_layout()
         fig.savefig(savename_png)
 
-
-class Gatesweep(Sweep):
-    def __init__(self, gate, meter, minvoltage, maxvoltage, stepsize, waittime,
-            wait_max, wait_max_time, savename, plot, plot_lower, enable_music):
-
-        # Inits
-        super().__init__(minvoltage, maxvoltage, stepsize, waittime,
-            wait_max, wait_max_time, savename, plot, plot_lower, enable_music)
-        QtCore.QObject.__init__(self)
-
-        self.gate = gate
-        self.meter = meter
-        self.lakeshore = Lakeshore()
-        savestring = \
-                '# gatevoltage(V), temp(K), voltage(V), current(A), R_4pt(W)'
-        self.create_savefile(savestring)
-        self.init_ramp_parameters()
-
-
     @QtCore.pyqtSlot()
     def start(self):
-        self.start_gatesweep()
+        self.start_sweep()
         self.finished_sweep.emit(True)
 
-    def start_gatesweep(self):
-        if self.enable_music:
-            self.music.play()
-        self.measuring = True
-        x = []
-        y = []
-        r = []
-        gc = []
-        while self.measuring:
-            # Set gatevoltage and measure values
-            self.gate.set_voltage(self.gatevoltage)
-            time.sleep(self.waittime)
-            meterV = self.meter.read_voltage()
-            meterI = self.meter.read_current()
-            temp = self.lakeshore.read_temp()
-            gatecurrent = self.gate.read_current()
-
-            x.append(self.gatevoltage)
-            y.append(meterV)
-            r.append(meterV/meterI)
-            gc.append(gatecurrent)
-
-            self.plot.setData(x, r)
-            self.plot_lower.setData(x, gc)
-
-            # Write values to file
-            writedict = {
-                    'Gatevoltage': self.gatevoltage,
-                    'T': temp,
-                    'V': meterV,
-                    'I': meterI,
-                    'R': meterV/meterI,
-                    'I_gate': gatecurrent,
-                    }
-            for i in writedict:
-                self.savefile.write('{} , '.format(str(writedict[i]).strip()))
-            self.savefile.write("\n")
-
-            # Set gatevoltage to next value
-            self.ramp_gatevoltage()
-        self.music.stop()
-        self.finish_sweep(x, r, gc, 'Gatevoltage [V]', r'Resistance [$\Omega$]',
-                'Gatecurrent [A]')
 
 
 class ResLogger(QtCore.QObject):
@@ -456,7 +515,7 @@ class ResLogger(QtCore.QObject):
             v.append(meterV)
             # Plot values in real time
             self.plot.setData(t, r)
-            self.plot_lower.setData(temps, r)
+            self.plot_lower.setData(t, temps)
             self.savefile.write(
                 "{}, {}, {}, {} \n".format(time_elapsed, meterV, resistance, temperature)
             )

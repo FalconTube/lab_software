@@ -50,6 +50,25 @@ class Keithley():
         self.read_values()
         return self.resistance
 
+    def set_voltage(self, value):
+        self.write(':SOUR:VOLT:LEV {}'.format(value))
+
+    def set_current(self, value):
+        self.write(':SOUR:CURR:LEV {}'.format(value))
+
+    def slowly_to_target(self, target, voltage=False):
+        if target != 0:
+            volt_steps = np.linspace(0, target, 50)
+        else:
+            now_volts = self.read_voltage()
+            volt_steps = np.linspace(now_volts, 0, 50)
+        for i in volt_steps:
+            if voltage:
+                self.set_voltage(i)
+            else:
+                self.set_current(i)
+            time.sleep(0.2)
+
 
 class Gate(Keithley):
     def __init__(self, gpibnum, compliance=0.0010):
@@ -134,8 +153,6 @@ class Meter(Keithley):
         for i in meter_setup:
             self.meter.write(i)
 
-    def set_voltage(self, value):
-        self.meter.write(':SOUR:VOLT:LEV {}'.format(value))
 
 
 class Lakeshore():

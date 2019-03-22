@@ -55,7 +55,7 @@
              <number>0</number>
             </property>
             <property name="minimum">
-             <double>-100.000000000000000</double>
+             <double>-200.000000000000000</double>
             </property>
             <property name="maximum">
              <double>0.000000000000000</double>
@@ -90,7 +90,7 @@
              <double>0.000000000000000</double>
             </property>
             <property name="maximum">
-             <double>100.000000000000000</double>
+             <double>200.000000000000000</double>
             </property>
             <property name="value">
              <double>40.000000000000000</double>
@@ -361,9 +361,9 @@
     <property name="geometry">
      <rect>
       <x>310</x>
-      <y>300</y>
+      <y>320</y>
       <width>801</width>
-      <height>551</height>
+      <height>571</height>
      </rect>
     </property>
    </widget>
@@ -373,7 +373,7 @@
       <x>310</x>
       <y>20</y>
       <width>801</width>
-      <height>278</height>
+      <height>297</height>
      </rect>
     </property>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -460,18 +460,18 @@
            </widget>
           </item>
           <item row="3" column="1">
-           <widget class="QDoubleSpinBox" name="FoxedGateBox">
+           <widget class="QDoubleSpinBox" name="FixedGateBox">
             <property name="decimals">
              <number>1</number>
             </property>
             <property name="minimum">
-             <double>-100.000000000000000</double>
+             <double>-200.000000000000000</double>
             </property>
             <property name="maximum">
-             <double>100.000000000000000</double>
+             <double>200.000000000000000</double>
             </property>
             <property name="singleStep">
-             <double>0.000100000000000</double>
+             <double>1.000000000000000</double>
             </property>
             <property name="value">
              <double>0.000000000000000</double>
@@ -708,7 +708,7 @@
      <x>0</x>
      <y>0</y>
      <width>1138</width>
-     <height>30</height>
+     <height>36</height>
     </rect>
    </property>
   </widget>
