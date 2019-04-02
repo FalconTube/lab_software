@@ -26,6 +26,7 @@ from __future__ import print_function, unicode_literals
 from enum import Enum
 from time import sleep
 import serial
+import sys
 
 __all__ = ['KoradSerial', 'ChannelMode', 'OnOffState', 'Tracking']
 
@@ -230,8 +231,9 @@ class KoradSerial(object):
             try:
                 self.port = serial.Serial(port, 9600, timeout=1)
                 print('Successfully opened Korad! ')
-            except:
+            except ValueError:
                 print('Could not open Korad. Exiting... ')
+                sys.exit()
 
         def read_character(self):
             c = self.port.read(1).decode('ascii')
