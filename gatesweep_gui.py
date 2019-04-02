@@ -149,6 +149,7 @@ class MainWindow(QMainWindow):
             self.label_failed(self.UI.GateLabel)
 
     def init_kmeter(self):
+        print('Initializing')
         port = self.UI.KMeterPortBox.currentText()
         fwire = True if self.UI.WireCheckBox.isChecked() else False
         source_volt = True if self.UI.SourceVoltsRadio.isChecked() else False
@@ -161,7 +162,7 @@ class MainWindow(QMainWindow):
         try:
             self.meter = Meter(port, source_val, fwire, source_volt)
             self.label_connected(self.UI.KMeterLabel)
-        except:
+        except ValueError:
             self.label_failed(self.UI.KMeterLabel)
 
     def init_lmeter(self):
@@ -303,11 +304,11 @@ class Sweep(QtCore.QObject):
 
 
     def start_sweep(self):
-        if not self.is_sd_sweep:
-            if self.meter.set_source_voltage:
-                self.slowly_to_target(self.meter.source_val, self.meter, voltage=True)
-            else:
-                self.slowly_to_target(self.meter.source_val, self.meter, voltage=False)
+        # if not self.is_sd_sweep:
+            # if self.meter.set_source_voltage:
+                # self.slowly_to_target(self.meter.source_val, self.meter, voltage=True)
+            # else:
+                # self.slowly_to_target(self.meter.source_val, self.meter, voltage=False)
         #else:
             #self.slowly_to_target(self.meter.source_val, self.meter, voltage=True)
         if self.enable_music:
@@ -429,12 +430,11 @@ class Sweep(QtCore.QObject):
         else:
             now_val = round(device.read_current(),8)
             steps = np.linspace(now_val, target, 20)
-        print(now_val, target)
         if now_val == target:
             return
         # Need to reverse steps if going downwards
-        if now_val > abs(target):
-            steps = steps[::-1]
+        # if now_val > abs(target):
+            # steps = steps[::-1]
 
         for i in steps:
             if voltage:
@@ -448,7 +448,7 @@ class Sweep(QtCore.QObject):
         try:
             self.slowly_to_target(0, self.gate, voltage=True)
             # self.slowly_to_voltage(0, meter)
-        except:
+        except ValueError:
             pass
 
         self.savefile.close()

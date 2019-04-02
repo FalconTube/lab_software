@@ -63,6 +63,8 @@ class Keithley():
         else:
             now_val = round(self.read_current(),8)
             steps = np.linspace(now_val, target, 20)
+            print(now_val, target)
+            print(steps)
         if now_val == target:
             return
         # Need to reverse steps if going downwards
@@ -133,8 +135,8 @@ class Meter(Keithley):
                 ':OUTP OFF',
                 ':SOUR:FUNC CURR',  # Set current mode
                 ':SOUR:CURR:MODE FIX',
-                #':SOUR:CURR:RANG 0.0000100',  # Set acceptable current range to 100uA
-                ':SOUR:CURR:RANG 0.200',  # Set acceptable current range to 100uA
+                ':SOUR:CURR:RANG {}'.format(5*self.source_val),  # Set acceptable current range to 100uA
+                # ':SOUR:CURR:RANG 0.200',  # Set acceptable current range to 100uA
                 ':SENS:FUNC "VOLT"',  # Set-up voltage measurement
                 ':SENS:VOLT:PROT 120.0',  # Set voltage compliance
                 # Turn on 4-wire sensing
@@ -143,6 +145,10 @@ class Meter(Keithley):
                 # ':SOUR:CURR:LEV {}'.format(self.source_val),
                 ':OUTP ON'
             ]
+
+            for i in meter_setup:
+                self.meter.write(i)
+            self.slowly_to_target(self.source_val, voltage=False)
         else:
             meter_setup = [
                 '*RST',
@@ -150,7 +156,8 @@ class Meter(Keithley):
                 ':OUTP OFF',
                 ':SOUR:FUNC VOLT',  # Set voltage mode
                 ':SOUR:VOLT:MODE FIX',
-                ':SOUR:VOLT:RANG 200',  # Set acceptable voltage range
+                ':SOUR:VOLT:RANG {}'.format(10*self.source_val),  # Set acceptable current range to 100uA
+                # ':SOUR:VOLT:RANG 200',  # Set acceptable voltage range
                 ':SENS:FUNC "CURR"',  # Set-up current measurement
                 # Turn on 4-wire sensing
                 ':SYST:RSEN {}'.format(self.fwire_str),
@@ -161,8 +168,11 @@ class Meter(Keithley):
                 ':OUTP ON'
             ]
 
-        for i in meter_setup:
-            self.meter.write(i)
+            for i in meter_setup:
+                self.meter.write(i)
+
+            self.slowly_to_target(self.source_val, voltage=True)
+
 
 
 
