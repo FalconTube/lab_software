@@ -63,8 +63,6 @@ class Keithley():
         else:
             now_val = round(self.read_current(),8)
             steps = np.linspace(now_val, target, 20)
-            print(now_val, target)
-            print(steps)
         if now_val == target:
             return
         # Need to reverse steps if going downwards
@@ -128,14 +126,18 @@ class Meter(Keithley):
 
     def _initialize_meter(self):
         self.meter = self.keithley
+        
         if not self.set_source_voltage:
+            max_curr = 1
+            range_val = 5*self.source_val if 5*self.source_val < max_curr else max_curr
+            #range_val = 50*self.source_val if 50*self.source_val < 200 else 200
             meter_setup = [
                 '*RST',
                 '*CLS',
                 ':OUTP OFF',
                 ':SOUR:FUNC CURR',  # Set current mode
                 ':SOUR:CURR:MODE FIX',
-                ':SOUR:CURR:RANG {}'.format(5*self.source_val),  # Set acceptable current range to 100uA
+                ':SOUR:CURR:RANG {}'.format(range_val),  # Set acceptable current range to 100uA
                 # ':SOUR:CURR:RANG 0.200',  # Set acceptable current range to 100uA
                 ':SENS:FUNC "VOLT"',  # Set-up voltage measurement
                 ':SENS:VOLT:PROT 120.0',  # Set voltage compliance
@@ -150,13 +152,17 @@ class Meter(Keithley):
                 self.meter.write(i)
             self.slowly_to_target(self.source_val, voltage=False)
         else:
+            max_volts = 200
+            range_val = 5*self.source_val if 5*self.source_val < max_volts else max_volts
+            #print(range_val)
             meter_setup = [
                 '*RST',
                 '*CLS',
                 ':OUTP OFF',
                 ':SOUR:FUNC VOLT',  # Set voltage mode
                 ':SOUR:VOLT:MODE FIX',
-                ':SOUR:VOLT:RANG {}'.format(10*self.source_val),  # Set acceptable current range to 100uA
+                ':SOUR:VOLT:RANG {}'.format(range_val),  # Set acceptable current range to 100uA
+                # ':SOUR:VOLT:RANG {}'.format(50*self.source_val),  # Set acceptable current range to 100uA
                 # ':SOUR:VOLT:RANG 200',  # Set acceptable voltage range
                 ':SENS:FUNC "CURR"',  # Set-up current measurement
                 # Turn on 4-wire sensing
@@ -172,6 +178,12 @@ class Meter(Keithley):
                 self.meter.write(i)
 
             self.slowly_to_target(self.source_val, voltage=True)
+
+    def set_range(self, value, is_volts=True):
+        if is_volts:
+            self.meter.write(':SOUR:VOLT:RANG {}'.format(value))
+        else:
+            self.meter.write(':SOUR:CURR:RANG {}'.format(value))
 
 
 

@@ -14,7 +14,7 @@ class AML():
         self.start_time = time.time()
 
     def init_port(self):
-        self.ser.port='COM12'
+        self.ser.port='COM4'
         self.ser.baudrate=9600
         self.ser.parity=serial.PARITY_NONE
         self.ser.stopbits=serial.STOPBITS_ONE

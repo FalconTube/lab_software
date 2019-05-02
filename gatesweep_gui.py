@@ -88,8 +88,11 @@ class MainWindow(QMainWindow):
         self.UI.SavenameLabel.setText(savepath)
 
     def choose_savename(self):
+        old_name = self.savename
         self.savename = QFileDialog.getSaveFileName(
                 self, 'Choose Savename', '.', self.tr("Text Files (*.dat)"))[0]
+        if self.savename == '':
+            self.savename = old_name
         self.UI.SavenameLabel.setText(self.savename)
 
     def init_port_selection(self):
@@ -125,6 +128,10 @@ class MainWindow(QMainWindow):
         self.UI.AutoGainButton.released.connect(self.set_autogain_time)
         self.UI.FixedGateBox.valueChanged.connect(self.change_gate_voltage)
 
+    def label_init(self, label):
+        label.setText('Initializing...')
+        label.setStyleSheet('color: blue')
+
     def label_connected(self, label):
         label.setText('Connected')
         label.setStyleSheet('color: green')
@@ -142,14 +149,14 @@ class MainWindow(QMainWindow):
         compliance = self.UI.GateComplianceBox.value()
         fixed_volt = self.UI.FixedGateBox.value()
         try:
+            self.label_init(self.UI.GateLabel)
             self.gate = Gate(port, compliance)
-            self.gate.slowly_to_target(fixed_volt)
+            self.gate.slowly_to_target(fixed_volt, voltage=True)
             self.label_connected(self.UI.GateLabel)
         except ValueError:
             self.label_failed(self.UI.GateLabel)
 
     def init_kmeter(self):
-        print('Initializing')
         port = self.UI.KMeterPortBox.currentText()
         fwire = True if self.UI.WireCheckBox.isChecked() else False
         source_volt = True if self.UI.SourceVoltsRadio.isChecked() else False
@@ -160,6 +167,7 @@ class MainWindow(QMainWindow):
         except:
             pass
         try:
+            self.label_init(self.UI.KMeterLabel)
             self.meter = Meter(port, source_val, fwire, source_volt)
             self.label_connected(self.UI.KMeterLabel)
         except ValueError:
@@ -223,7 +231,7 @@ class MainWindow(QMainWindow):
         gain_time = 60
         meterI = 1E-5
         axes = ['Time [s]', 'Resistance [Ohm]', 'Temperature [K]']
-        self.init_graph()
+        self.init_graph(axes)
         # Check if file exists again, user could not have changed old one
         self.init_save(self.savename)
         savefile = self.savename
@@ -304,13 +312,8 @@ class Sweep(QtCore.QObject):
 
 
     def start_sweep(self):
-        # if not self.is_sd_sweep:
-            # if self.meter.set_source_voltage:
-                # self.slowly_to_target(self.meter.source_val, self.meter, voltage=True)
-            # else:
-                # self.slowly_to_target(self.meter.source_val, self.meter, voltage=False)
-        #else:
-            #self.slowly_to_target(self.meter.source_val, self.meter, voltage=True)
+        if self.is_sd_sweep:
+            self.meter.set_range(self.maxvoltage)
         if self.enable_music:
             self.music.play()
         self.measuring = True
@@ -450,6 +453,9 @@ class Sweep(QtCore.QObject):
             # self.slowly_to_voltage(0, meter)
         except ValueError:
             pass
+        if self.is_sd_sweep:
+            self.slowly_to_target(0, self.meter, voltage=True)
+
 
         self.savefile.close()
         # After finishing, plot it once in mpl
@@ -493,6 +499,27 @@ class ResLogger(QtCore.QObject):
         savestring = "# time[s], Voltage[V], R[Ohms], temperature[K]"
         self.create_savefile(savestring)
         self.measuring = True
+
+    def finish_sweep(self, x, y_up, y_low, xlabel='', y_uplabel='', y_lowlabel=''):
+        # Here the measurement is aborted or finished
+
+        self.savefile.close()
+        # After finishing, plot it once in mpl
+        fig = plt.figure()
+        ax = fig.add_subplot(211)
+        ax1 = fig.add_subplot(212)
+        basename = os.path.basename(self.savename)
+        fig.suptitle(os.path.splitext(basename))
+        ax.set_ylabel(y_uplabel)
+        ax1.set_xlabel(xlabel)
+        ax1.set_ylabel(y_lowlabel)
+        ax.plot(x, y_up, 'k.')
+        ax1.plot(x, y_low, 'k.')
+        # save figure file as png
+        savename_png = os.path.splitext(self.savename)[0] + '.png'
+        fig.tight_layout()
+        fig.savefig(savename_png)
+
 
     def set_gain_time(self, gain_time):
         self.gain_time = gain_time
@@ -539,7 +566,7 @@ class ResLogger(QtCore.QObject):
                     time_elapsed, meterV, resistance, temperature
                 )
             )
-        self.finished_sweep(t, r, temps, 'Time [s]', r'Resistance [$\Omega$]',
+        self.finish_sweep(t, r, temps, 'Time [s]', r'Resistance [$\Omega$]',
                 'Temperature [K]')
 
     def stop(self):
