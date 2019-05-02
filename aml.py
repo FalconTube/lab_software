@@ -3,16 +3,17 @@ import serial
 import visdom
 import numpy as np
 import datetime
+from Classes.device_classes import AML
 
-class AML():
-    def __init__(self):
-        self.reading = True
-        self.ser = serial.Serial()
-        self.init_port()
-        time.sleep(1)
+class PressureLogging:
+    ''' Logging pressure of AML and writing to visdom plot '''
+    def __init__(self, interval):
+        self.aml = AML('COM4')
         self.v = visdom.Visdom()
-        self.start_time = time.time()
+        # self.start_time = time.time()
+        self.interval = interval
 
+<<<<<<< HEAD
     def init_port(self):
         self.ser.port='COM4'
         self.ser.baudrate=9600
@@ -85,8 +86,10 @@ class AML():
         out = out.strip()
         return float(out)
     
+=======
+>>>>>>> a7a7c8db7042bf8db579998ada1d287a8d9cb8d9
     def init_vis_plot(self):
-        curr_time =datetime.datetime.now()
+        curr_time = datetime.datetime.now()
         #curr_time = time.time()
         y = np.array([self.curr_pressure])
         self.pressure_plot = self.v.line(y, X=np.array([curr_time]),
@@ -102,7 +105,7 @@ class AML():
                     )
 
     def update_vis_plot(self):
-        now =datetime.datetime.now()
+        now = datetime.datetime.now()
         #now = time.time() 
         y = np.array([self.curr_pressure])
         self.v.line(y, X=np.array([now]), win=self.pressure_plot,
@@ -110,20 +113,21 @@ class AML():
                     )
 
     def measure(self):
-        first = self.read_value()
-        self.curr_pressure = self.convert_value(first)
+        first = self.aml.read_value()
+        self.curr_pressure = self.aml.convert_value(first)
         self.init_vis_plot()
         while self.reading:
-            answer = self.read_value()
-            if 'GI1' in answer:
-                try:
-                    self.curr_pressure = self.convert_value(answer)
-                    self.update_vis_plot()
-                except:
-                    time.sleep(60)
+            self.curr_pressure = self.aml.read_value()
+            self.update_vis_plot()
+            time.sleep(self.interval)
+            # if 'GI1' in answer:
+                # try:
+                    # self.curr_pressure = self.aml.convert_value(answer)
+                    # self.update_vis_plot()
+                # except:
+                    # pass
         self.ser.close()
 
-
 if __name__ == '__main__':
-    A = AML()
-    A.measure()
+    P = PressureLogging(20)
+    P.measure()

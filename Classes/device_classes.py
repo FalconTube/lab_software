@@ -479,6 +479,67 @@ class FUG():
         self.ser.write(b'F0\r\n')
         self.ser.close()
 
+class AML:
+    def __init__(self, comport):
+        self.reading = True
+        self.ser = serial.Serial()
+        self.init_port(comport)
+
+    def init_port(self, comport):
+        self.ser.port=comport
+        self.ser.baudrate=9600
+        self.ser.parity=serial.PARITY_NONE
+        self.ser.stopbits=serial.STOPBITS_ONE
+        self.ser.bytesize=serial.EIGHTBITS
+        self.ser.write_timeout=3
+        self.ser.timeout=3
+        self.ser.rts=1,
+        self.ser.dtr=1,
+        self.ser.open()
+        now = datetime.datetime.now()
+        print('Sucessfully opened connection! {}'.format(now))
+
+    def read_value(self):
+        connection_open = self.ser.is_open
+        while not connection_open:
+            # time.sleep(2)
+            try:
+                self.init_port()
+            except:
+                print('Could not open connection to AML... {}'\
+                        .format(datetimme.datetime.now()))
+            connection_open = self.ser.is_open
+        is_avail = False
+        self.ser.reset_input_buffer()
+        self.ser.write(b'*S0')
+
+        time.sleep(0.2)
+        while not is_avail:
+            try:
+                answer = self.ser.readline().decode('utf-8')
+            except:
+                answer = ''
+            if not 'GI1' in answer:
+                print('TIMED OUT! Restarting connection...')
+                self.ser.close()
+                time.sleep(1)
+                self.init_port()
+                self.ser.write(b'*S0')
+                time.sleep(1)
+                is_avail = False
+            else:
+                is_avail = True
+        self.ser.reset_input_buffer()
+        self.ser.close()
+        answer = self.convert_value(answer)
+        return answer
+
+
+    def convert_value(self, instring):
+        out = instring.split('1A@')[-1].split(',')[0]
+        out = out.strip()
+        return float(out)
+
 if __name__ == '__main__':
     print('\
     This is the file holding the Device classes.\
