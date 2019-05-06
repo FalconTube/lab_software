@@ -138,6 +138,7 @@ class MainWindow(QMainWindow):
         label.setStyleSheet('color: black')
 
     def init_gate(self):
+        QApplication.setOverrideCursor(Qt.WaitCursor)
         port = self.UI.GatePortBox.currentText()
         compliance = self.UI.GateComplianceBox.value()
         fixed_volt = self.UI.FixedGateBox.value()
@@ -147,23 +148,26 @@ class MainWindow(QMainWindow):
             self.label_connected(self.UI.GateLabel)
         except ValueError:
             self.label_failed(self.UI.GateLabel)
+        QApplication.restoreOverrideCursor()
 
     def init_kmeter(self):
-        print('Initializing')
+        QApplication.setOverrideCursor(Qt.WaitCursor)
         port = self.UI.KMeterPortBox.currentText()
         fwire = True if self.UI.WireCheckBox.isChecked() else False
         source_volt = True if self.UI.SourceVoltsRadio.isChecked() else False
         source_val = self.UI.SourceValBox.value()
+        speed = self.UI.SpeedBox.value()
         try:
             self.meter.close()
             self.label_idle(self.UI.LMeterLabel)
         except:
             pass
         try:
-            self.meter = Meter(port, source_val, fwire, source_volt)
+            self.meter = Meter(port, source_val, fwire, source_volt, speed)
             self.label_connected(self.UI.KMeterLabel)
         except ValueError:
             self.label_failed(self.UI.KMeterLabel)
+        QApplication.restoreOverrideCursor()
 
     def init_lmeter(self):
         port = self.UI.LMeterPortBox.currentText()
@@ -353,6 +357,7 @@ class Sweep(QtCore.QObject):
             self.ramp_sweepvoltage()
         self.music.stop()
         self.finish_sweep(self.x, self.r, self.gc, self.x_name, self.yup_name, self.ylow_name)
+        QApplication.restoreOverrideCursor()
 
     def create_savefile(self, savestring):
         ''' Creates savefile and generates header '''
@@ -416,6 +421,7 @@ class Sweep(QtCore.QObject):
                 self.stop()
 
     def stop(self):
+        QApplication.setOverrideCursor(Qt.WaitCursor)
         self.measuring = False
 
     def get_measuring(self):
@@ -539,10 +545,13 @@ class ResLogger(QtCore.QObject):
                     time_elapsed, meterV, resistance, temperature
                 )
             )
-        self.finished_sweep(t, r, temps, 'Time [s]', r'Resistance [$\Omega$]',
-                'Temperature [K]')
+        self.finished_sweep.emit(True)
+        # self.finish_sweep(t, r, temps, 'Time [s]', r'Resistance [$\Omega$]',
+                # 'Temperature [K]')
+        QApplication.restoreOverrideCursor()
 
     def stop(self):
+        QApplication.setOverrideCursor(Qt.WaitCursor)
         self.measuring = False
 
 

@@ -115,13 +115,14 @@ class Gate(Keithley):
 
 class Meter(Keithley):
     def __init__(self, gpibnum, source_val=0.00001, four_wire=True,
-                 set_source_voltage=False):
+                 set_source_voltage=False, speed=6):
         if four_wire == True:
             self.fwire_str = 'ON'
         else:
             self.fwire_str = 'OFF'
         self.source_val = source_val
         self.set_source_voltage = set_source_voltage
+        self.speed = speed
         self._initialize_keithley(gpibnum)
         self._initialize_meter()
         pass
@@ -143,6 +144,7 @@ class Meter(Keithley):
                 ':SYST:RSEN {}'.format(self.fwire_str),
                 # Set current source to 10 uA
                 # ':SOUR:CURR:LEV {}'.format(self.source_val),
+                'SENSE:VOLT:NPLCycles {}'.format(self.speed), # Set integration time
                 ':OUTP ON'
             ]
 
@@ -165,6 +167,7 @@ class Meter(Keithley):
                 # ':SENS:CURR:PROT {}'.format(self.compliance),
                 # Set voltage source to 0V
                 # ':SOUR:VOLT:LEV {}'.format(self.source_val),
+                'SENSE:CURR:NPLCycles {}'.format(self.speed), # Set integration time
                 ':OUTP ON'
             ]
 
