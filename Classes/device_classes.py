@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import serial
 import serial.tools.list_ports
 import weakref
-
+import datetime
 
 
 class Keithley():
@@ -144,6 +144,7 @@ class Meter(Keithley):
                 # Turn on 4-wire sensing
                 ':SYST:RSEN {}'.format(self.fwire_str),
                 # Set current source to 10 uA
+                'SENS:VOLT:NPLCycles 6', 
                 # ':SOUR:CURR:LEV {}'.format(self.source_val),
                 ':OUTP ON'
             ]
@@ -178,6 +179,7 @@ class Meter(Keithley):
                 self.meter.write(i)
 
             self.slowly_to_target(self.source_val, voltage=True)
+            
 
     def set_range(self, value, is_volts=True):
         if is_volts:
@@ -481,12 +483,12 @@ class FUG():
 
 class AML:
     def __init__(self, comport):
-        self.reading = True
+        self.comport = comport
         self.ser = serial.Serial()
-        self.init_port(comport)
+        self.init_port()
 
-    def init_port(self, comport):
-        self.ser.port=comport
+    def init_port(self):
+        self.ser.port=self.comport
         self.ser.baudrate=9600
         self.ser.parity=serial.PARITY_NONE
         self.ser.stopbits=serial.STOPBITS_ONE
@@ -502,12 +504,12 @@ class AML:
     def read_value(self):
         connection_open = self.ser.is_open
         while not connection_open:
-            # time.sleep(2)
+            time.sleep(1)
             try:
                 self.init_port()
             except:
                 print('Could not open connection to AML... {}'\
-                        .format(datetimme.datetime.now()))
+                        .format(datetime.datetime.now()))
             connection_open = self.ser.is_open
         is_avail = False
         self.ser.reset_input_buffer()
@@ -519,6 +521,7 @@ class AML:
                 answer = self.ser.readline().decode('utf-8')
             except:
                 answer = ''
+            # Catches Connection problems
             if not 'GI1' in answer:
                 print('TIMED OUT! Restarting connection...')
                 self.ser.close()
@@ -528,10 +531,14 @@ class AML:
                 time.sleep(1)
                 is_avail = False
             else:
-                is_avail = True
+                try:
+                    # Catches AML being turned off
+                    answer = self.convert_value(answer)
+                    is_avail = True
+                except:
+                    is_avail = False
         self.ser.reset_input_buffer()
         self.ser.close()
-        answer = self.convert_value(answer)
         return answer
 
 

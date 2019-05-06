@@ -351,11 +351,11 @@ class Sweep(QtCore.QObject):
             # Plot values
             self.plot.setData(self.plotx, self.plot_yup)
             self.plot_lower.setData(self.plotx, self.plot_ylow)
-
+            QApplication.processEvents()
             # Set gatevoltage to next value
             self.ramp_sweepvoltage()
         self.music.stop()
-        self.finish_sweep(self.x, self.r, self.gc, self.x_name, self.yup_name, self.ylow_name)
+        self.finish_sweep(self.x, self.y, self.gc, self.x_name, self.yup_name, self.ylow_name)
 
     def create_savefile(self, savestring):
         ''' Creates savefile and generates header '''
@@ -566,6 +566,7 @@ class ResLogger(QtCore.QObject):
                     time_elapsed, meterV, resistance, temperature
                 )
             )
+            QApplication.processEvents()
         self.finish_sweep(t, r, temps, 'Time [s]', r'Resistance [$\Omega$]',
                 'Temperature [K]')
 
