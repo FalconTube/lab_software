@@ -208,6 +208,12 @@
              <property name="decimals">
               <number>6</number>
              </property>
+             <property name="minimum">
+              <double>-200.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>200.000000000000000</double>
+             </property>
              <property name="singleStep">
               <double>0.000001000000000</double>
              </property>
@@ -689,7 +695,7 @@
      <x>0</x>
      <y>0</y>
      <width>1321</width>
-     <height>30</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>

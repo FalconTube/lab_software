@@ -145,7 +145,7 @@ class MainWindow(QMainWindow):
         label.setStyleSheet('color: black')
 
     def init_gate(self):
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
         port = self.UI.GatePortBox.currentText()
         compliance = self.UI.GateComplianceBox.value()
         fixed_volt = self.UI.FixedGateBox.value()
@@ -159,7 +159,7 @@ class MainWindow(QMainWindow):
         QApplication.restoreOverrideCursor()
 
     def init_kmeter(self):
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
         port = self.UI.KMeterPortBox.currentText()
         fwire = True if self.UI.WireCheckBox.isChecked() else False
         source_volt = True if self.UI.SourceVoltsRadio.isChecked() else False
@@ -199,17 +199,28 @@ class MainWindow(QMainWindow):
         waittime = self.UI.WaittimeBox.value()
         wait_max = True if self.UI.MaxCheckbox.isChecked() else False
         wait_max_time = self.UI.WaitmaxBox.value()
+        fwire = True if self.UI.WireCheckBox.isChecked() else False
         # Check if file exists again, user could not have changed old one
         self.init_save(self.savename)
         savefile = self.savename
         benny_hill = True if self.UI.BennyHillBox.isChecked() else False
         if self.UI.SweepGateRadio.isChecked():
-            axes = ['GateV', 'Resistance', 'GateI']
-            self.init_graph(axes)
-            self.gs = Sweep(self.gate, self.meter, minvoltage, maxvoltage,
-                    stepsize, waittime, wait_max, wait_max_time, savefile,
-                    self.plot, self.plot_lower, 'GateV',
-                    'Resistance', 'GateI', benny_hill, False)
+            if fwire:
+                axes = ['GateV', 'Resistance', 'GateI']
+                self.init_graph(axes)
+                self.gs = Sweep(self.gate, self.meter, minvoltage, maxvoltage,
+                        stepsize, waittime, wait_max, wait_max_time, savefile,
+                        self.plot, self.plot_lower, 'GateV',
+                        'Resistance', 'GateI', benny_hill, False)
+            else:
+                # Then we Plot current on y axis
+                axes = ['GateV', 'MeterI', 'GateI']
+                self.init_graph(axes)
+                self.gs = Sweep(self.gate, self.meter, minvoltage, maxvoltage,
+                        stepsize, waittime, wait_max, wait_max_time, savefile,
+                        self.plot, self.plot_lower, 'GateV',
+                        'MeterI', 'GateI', benny_hill, False)
+
         else:
             # Then we sweep the meter, so change gate and meter
             axes = ['MeterV', 'MeterI', 'GateI']
@@ -359,9 +370,9 @@ class Sweep(QtCore.QObject):
             QApplication.processEvents()
             # Set gatevoltage to next value
             self.ramp_sweepvoltage()
+        QApplication.restoreOverrideCursor()
         self.music.stop()
         self.finish_sweep(self.x, self.y, self.gc, self.x_name, self.yup_name, self.ylow_name)
-        QApplication.restoreOverrideCursor()
 
     def create_savefile(self, savestring):
         ''' Creates savefile and generates header '''
@@ -425,8 +436,9 @@ class Sweep(QtCore.QObject):
                 self.stop()
 
     def stop(self):
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
         self.measuring = False
+        QApplication.restoreOverrideCursor()
 
     def get_measuring(self):
         if self.measuring:
@@ -579,11 +591,11 @@ class ResLogger(QtCore.QObject):
         self.finished_sweep.emit(True)
         # self.finish_sweep(t, r, temps, 'Time [s]', r'Resistance [$\Omega$]',
                 # 'Temperature [K]')
-        QApplication.restoreOverrideCursor()
 
     def stop(self):
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
         self.measuring = False
+        QApplication.restoreOverrideCursor()
 
 
 if __name__ == '__main__':
