@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (
     QApplication,
     QLabel,
     QFileDialog,
+    QMessageBox,
     )
 from Classes.device_classes import *
 from Classes.measurement_class import Measurement
@@ -127,6 +128,7 @@ class MainWindow(QMainWindow):
         self.UI.StartResButton.released.connect(self.start_resmeas)
         self.UI.AutoGainButton.released.connect(self.set_autogain_time)
         self.UI.FixedGateBox.valueChanged.connect(self.change_gate_voltage)
+        self.UI.StartMultiSourceButton.released.connect(self.start_multi_sweep)
 
     def label_init(self, label):
         label.setText('Initializing...')
@@ -256,6 +258,39 @@ class MainWindow(QMainWindow):
         self.UI.StopResButton.released.connect(self.res.stop)
         self.start_in_thread(self.res)
 
+    def start_multi_sweep(self):
+        def start_multi(values):
+            for val in values:
+                self.UI.SourceValBox.setValue(val)
+                print('init')
+                QApplication.processEvents()
+                # self.init_kmeter()
+                QApplication.processEvents()
+                time.sleep(1)
+                # self.start_sweep()
+                QApplication.processEvents()
+
+        instring = self.UI.MultiSourceLine.text().strip()
+        try:
+            string_vals = instring.split(',')
+            vals = [float(i) for i in string_vals]
+            print(vals)
+        except:
+            print('Could not convert Line to floats. Did you do a Typo?')
+
+
+        start_question = "I will do Measurements with the following values:\n"\
+                + "{}.\n".format(vals)\
+                + "Is this what you wanted?"
+        if (
+            QMessageBox.Yes == QMessageBox(
+                QMessageBox.Information,
+                "Confirm Measurement",
+                start_question,
+                QMessageBox.Yes | QMessageBox.No,
+            ).exec()
+            ):
+            start_multi(vals)
 
     def set_autogain_time(self):
         auto_gain = self.UI.GainTimeBox.value()
