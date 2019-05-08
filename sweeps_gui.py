@@ -239,6 +239,7 @@ class MainWindow(QMainWindow):
     def start_in_thread(self, target):
         self.thread = QtCore.QThread(self)
         target.finished_sweep.connect(self.sweep_callback)
+        target.finished_sweep.connect(self.start_next)
         target.moveToThread(self.thread)
         self.thread.started.connect(target.start)
         self.UI.SweepLabel.setText('Measuring!')
@@ -258,29 +259,39 @@ class MainWindow(QMainWindow):
         self.UI.StopResButton.released.connect(self.res.stop)
         self.start_in_thread(self.res)
 
-    def start_multi_sweep(self):
-        def start_multi(values):
-            for val in values:
-                self.UI.SourceValBox.setValue(val)
-                print('init')
-                QApplication.processEvents()
-                # self.init_kmeter()
-                QApplication.processEvents()
-                time.sleep(1)
-                # self.start_sweep()
-                QApplication.processEvents()
 
+        # @QtCore.pyqtSlot()
+    def start_next(self):
+        try:
+            self.current_multi_val = self.multi_vals[self.current_multi_index]
+            self.start_multi()
+        except:
+            pass
+
+    def start_multi(self):
+        self.UI.SourceValBox.setValue(self.current_multi_val)
+        print('init')
+        QApplication.processEvents()
+        self.init_kmeter()
+        QApplication.processEvents()
+        time.sleep(1)
+        self.start_sweep()
+        QApplication.processEvents()
+        self.current_multi_index += 1
+
+    def start_multi_sweep(self):
         instring = self.UI.MultiSourceLine.text().strip()
         try:
             string_vals = instring.split(',')
-            vals = [float(i) for i in string_vals]
-            print(vals)
+            self.multi_vals = [float(i) for i in string_vals]
+            range_vals = range(len(self.multi_vals))
+            print(self.multi_vals)
         except:
             print('Could not convert Line to floats. Did you do a Typo?')
 
 
         start_question = "I will do Measurements with the following values:\n"\
-                + "{}.\n".format(vals)\
+                + "{}.\n".format(self.multi_vals)\
                 + "Is this what you wanted?"
         if (
             QMessageBox.Yes == QMessageBox(
@@ -290,7 +301,10 @@ class MainWindow(QMainWindow):
                 QMessageBox.Yes | QMessageBox.No,
             ).exec()
             ):
-            start_multi(vals)
+            self.current_multi_index = 0
+            self.current_multi_val = self.multi_vals[0]
+
+            self.start_multi()
 
     def set_autogain_time(self):
         auto_gain = self.UI.GainTimeBox.value()
