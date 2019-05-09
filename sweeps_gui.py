@@ -72,6 +72,7 @@ class MainWindow(QMainWindow):
             self.graph_lower.setLabel("left", y_lowlabel)
             self.graph_lower.setLabel("bottom", xlabel)
 
+
     def init_save(self, savepath=None):
         ''' Connects save button and sets default savename '''
         if savepath == None:
@@ -274,7 +275,7 @@ class MainWindow(QMainWindow):
         QApplication.processEvents()
         self.init_kmeter()
         QApplication.processEvents()
-        time.sleep(1)
+        time.sleep(60)
         self.start_sweep()
         QApplication.processEvents()
         self.current_multi_index += 1
@@ -421,7 +422,8 @@ class Sweep(QtCore.QObject):
             self.ramp_sweepvoltage()
         QApplication.restoreOverrideCursor()
         self.music.stop()
-        self.finish_sweep(self.x, self.y, self.gc, self.x_name, self.yup_name, self.ylow_name)
+        self.finish_sweep(self.x, self.plot_yup, self.plot_ylow,
+                self.x_name, self.yup_name, self.ylow_name)
 
     def create_savefile(self, savestring):
         ''' Creates savefile and generates header '''
