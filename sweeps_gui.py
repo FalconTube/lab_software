@@ -72,6 +72,11 @@ class MainWindow(QMainWindow):
             self.graph_lower.setLabel("left", y_lowlabel)
             self.graph_lower.setLabel("bottom", xlabel)
 
+    def update_graph(self):
+        x, y_up, y_low = self.gs.get_data()
+        self.plot.setData(x, y_up)
+        self.plot_lower.setData(x,y_low)
+
 
     def init_save(self, savepath=None):
         ''' Connects save button and sets default savename '''
@@ -154,6 +159,7 @@ class MainWindow(QMainWindow):
         fixed_volt = self.UI.FixedGateBox.value()
         try:
             self.label_init(self.UI.GateLabel)
+            QApplication.processEvents()
             self.gate = Gate(port, compliance)
             self.gate.slowly_to_target(fixed_volt, voltage=True)
             self.label_connected(self.UI.GateLabel)
@@ -175,6 +181,7 @@ class MainWindow(QMainWindow):
             pass
         try:
             self.label_init(self.UI.KMeterLabel)
+            QApplication.processEvents()
             self.meter = Meter(port, source_val, fwire, source_volt, speed)
             self.label_connected(self.UI.KMeterLabel)
         except ValueError:
@@ -241,6 +248,7 @@ class MainWindow(QMainWindow):
         self.thread = QtCore.QThread(self)
         target.finished_sweep.connect(self.sweep_callback)
         target.finished_sweep.connect(self.start_next)
+        target.new_data_available.connect(self.update_graph)
         target.moveToThread(self.thread)
         self.thread.started.connect(target.start)
         self.UI.SweepLabel.setText('Measuring!')
@@ -255,10 +263,10 @@ class MainWindow(QMainWindow):
         # Check if file exists again, user could not have changed old one
         self.init_save(self.savename)
         savefile = self.savename
-        self.res = ResLogger(self.meter, self.savename, self.plot, self.plot_lower)
+        self.gs = ResLogger(self.meter, self.savename, self.plot, self.plot_lower)
         # Also connect abort button now
-        self.UI.StopResButton.released.connect(self.res.stop)
-        self.start_in_thread(self.res)
+        self.UI.StopResButton.released.connect(self.gs.stop)
+        self.start_in_thread(self.gs)
 
 
         # @QtCore.pyqtSlot()
@@ -310,7 +318,7 @@ class MainWindow(QMainWindow):
     def set_autogain_time(self):
         auto_gain = self.UI.GainTimeBox.value()
         try:
-            self.res.set_autogain_time(auto_gain)
+            self.gs.set_autogain_time(auto_gain)
         except:
             pass
 
@@ -333,6 +341,7 @@ class MainWindow(QMainWindow):
 
 class Sweep(QtCore.QObject):
     finished_sweep = QtCore.pyqtSignal(bool)
+    new_data_available = QtCore.pyqtSignal(bool)
     def __init__(self, gate, meter, minvoltage, maxvoltage, stepsize,
             waittime, wait_max, wait_max_time, savename, plot, plot_lower,
             x_name, yup_name, ylow_name, enable_music, is_sd_sweep):
@@ -415,9 +424,7 @@ class Sweep(QtCore.QObject):
             self.savefile.write("\n")
             self.savefile.flush()
             # Plot values
-            self.plot.setData(self.plotx, self.plot_yup)
-            self.plot_lower.setData(self.plotx, self.plot_ylow)
-            QApplication.processEvents()
+            self.new_data_available.emit(True)
             # Set gatevoltage to next value
             self.ramp_sweepvoltage()
         QApplication.restoreOverrideCursor()
@@ -489,7 +496,6 @@ class Sweep(QtCore.QObject):
     def stop(self):
         QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
         self.measuring = False
-        QApplication.restoreOverrideCursor()
 
     def get_measuring(self):
         if self.measuring:
@@ -549,10 +555,13 @@ class Sweep(QtCore.QObject):
         self.start_sweep()
         self.finished_sweep.emit(True)
 
+    def get_data(self):
+        return self.x, self.plot_yup, self.plot_ylow
 
 
 class ResLogger(QtCore.QObject):
     finished_sweep = QtCore.pyqtSignal(bool)
+    new_data_available = QtCore.pyqtSignal(bool)
     def __init__(self, meter, savename, plot, plot_lower):
         QtCore.QObject.__init__(self)
     #def __init__(self, meter, savename, plot, autogain_time, meterI):
@@ -626,8 +635,7 @@ class ResLogger(QtCore.QObject):
             r.append(resistance)
             v.append(meterV)
             # Plot values in real time
-            self.plot.setData(t, r)
-            self.plot_lower.setData(t, temps)
+            self.new_data_available.emit(True)
             self.savefile.write(
                 "{}, {}, {}, {} \n".format(time_elapsed, meterV, resistance, temperature)
             )
@@ -636,7 +644,6 @@ class ResLogger(QtCore.QObject):
                     time_elapsed, meterV, resistance, temperature
                 )
             )
-            QApplication.processEvents()
         self.finish_sweep(t, r, temps, 'Time [s]', r'Resistance [$\Omega$]',
                 'Temperature [K]')
         self.finished_sweep.emit(True)
@@ -647,6 +654,9 @@ class ResLogger(QtCore.QObject):
         QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
         self.measuring = False
         QApplication.restoreOverrideCursor()
+
+    def get_plot_data(self):
+        return self.x, self.plot_yup, self.plot_ylow
 
 
 if __name__ == '__main__':
