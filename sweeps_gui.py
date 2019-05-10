@@ -279,7 +279,6 @@ class MainWindow(QMainWindow):
 
     def start_multi(self):
         self.UI.SourceValBox.setValue(self.current_multi_val)
-        print('init')
         QApplication.processEvents()
         self.init_kmeter()
         QApplication.processEvents()
@@ -294,7 +293,6 @@ class MainWindow(QMainWindow):
             string_vals = instring.split(',')
             self.multi_vals = [float(i) for i in string_vals]
             range_vals = range(len(self.multi_vals))
-            print(self.multi_vals)
         except:
             print('Could not convert Line to floats. Did you do a Typo?')
 
@@ -504,16 +502,13 @@ class Sweep(QtCore.QObject):
 
     def slowly_to_target(self, target, device, voltage=False):
         if voltage:
-            now_val = round(device.read_voltage(),8)
+            now_val = round(device.read_source_voltage(),8)
             steps = np.linspace(now_val, target, 20)
         else:
-            now_val = round(device.read_current(),8)
+            now_val = round(device.read_source_current(),8)
             steps = np.linspace(now_val, target, 20)
         if now_val == target:
             return
-        # Need to reverse steps if going downwards
-        # if now_val > abs(target):
-            # steps = steps[::-1]
 
         for i in steps:
             if voltage:
@@ -524,13 +519,20 @@ class Sweep(QtCore.QObject):
 
     def finish_sweep(self, x, y_up, y_low, xlabel='', y_uplabel='', y_lowlabel=''):
         # Here the measurement is aborted or finished
+
+        # Put all devices to zero and close them
         try:
-            self.slowly_to_target(0, self.gate, voltage=True)
-            # self.slowly_to_voltage(0, meter)
+            gatemode = self.gate.get_mode()
+            gatevolt = True if gatemode == 'VOLT' else False
+            self.slowly_to_target(0, self.gate, voltage=gatevolt)
         except ValueError:
             pass
-        if self.is_sd_sweep:
-            self.slowly_to_target(0, self.meter, voltage=True)
+        try:
+            metermode = self.meter.get_mode()
+            metervolt = True if metermode == 'VOLT' else False
+            self.slowly_to_target(0, self.meter, voltage=metervolt)
+        except ValueError:
+            pass
 
 
         self.savefile.close()
@@ -655,7 +657,7 @@ class ResLogger(QtCore.QObject):
         self.measuring = False
         QApplication.restoreOverrideCursor()
 
-    def get_plot_data(self):
+    def get_data(self):
         return self.x, self.plot_yup, self.plot_ylow
 
 
