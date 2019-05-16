@@ -652,16 +652,9 @@
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_6">
          <item>
-          <widget class="QLabel" name="ResLabel">
-           <property name="font">
-            <font>
-             <pointsize>14</pointsize>
-             <weight>75</weight>
-             <bold>true</bold>
-            </font>
-           </property>
+          <widget class="QCheckBox" name="TimeSwitchCeckbox">
            <property name="text">
-            <string>Idle</string>
+            <string>Switch Steps</string>
            </property>
           </widget>
          </item>

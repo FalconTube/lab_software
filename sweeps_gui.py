@@ -256,6 +256,7 @@ class MainWindow(QMainWindow):
         self.thread.start()
 
     def start_resmeas(self):
+        switching_steps = True if self.TimeSwitchCechbox.isChecked() else False
         gain_time = 60
         meterI = 1E-5
         axes = ['Time [s]', 'Resistance [Ohm]', 'Temperature [K]']
@@ -263,7 +264,8 @@ class MainWindow(QMainWindow):
         # Check if file exists again, user could not have changed old one
         self.init_save(self.savename)
         savefile = self.savename
-        self.gs = ResLogger(self.meter, self.savename, self.plot, self.plot_lower)
+        self.gs = ResLogger(self.meter, self.savename, self.plot, self.plot_lower,
+                switching_steps)
         # Also connect abort button now
         self.UI.StopResButton.released.connect(self.gs.stop)
         self.start_in_thread(self.gs)
@@ -562,7 +564,7 @@ class Sweep(QtCore.QObject):
 class ResLogger(QtCore.QObject):
     finished_sweep = QtCore.pyqtSignal(bool)
     new_data_available = QtCore.pyqtSignal(bool)
-    def __init__(self, meter, savename, plot, plot_lower):
+    def __init__(self, meter, savename, plot, plot_lower, switching_steps):
         QtCore.QObject.__init__(self)
     #def __init__(self, meter, savename, plot, autogain_time, meterI):
         # self.gate = Gate(1)
@@ -574,8 +576,9 @@ class ResLogger(QtCore.QObject):
         self.plot_lower = plot_lower
         self.gain_time = 0# in SEC
         self.meterI = 1
+        self.switching_steps = switching_steps
 
-        savestring = "# time[s], Voltage[V], R[Ohms], temperature[K]"
+        savestring = "# time[s], Voltage[V], R[Ohms], Current[A], Temperature[K]"
         self.create_savefile(savestring)
         self.measuring = True
 
@@ -637,13 +640,15 @@ class ResLogger(QtCore.QObject):
             # Plot values in real time
             self.new_data_available.emit(True)
             self.savefile.write(
-                "{}, {}, {}, {} \n".format(time_elapsed, meterV, resistance, temperature)
+                "{}, {}, {}, {}, {} \n".format(time_elapsed, meterV, resistance, meterI, temperature)
             )
             print(
-                    "Time: {:.1f}, Voltage: {}, R: {}, Temp: {}".format(
+                    "Time: {:.1f}, Voltage: {}, R: {}, Curr: {}, Temp: {}".format(
                     time_elapsed, meterV, resistance, temperature
                 )
             )
+            if self.switching_steps:
+                self.meter.switch_source_sign()
         self.finish_sweep(t, r, temps, 'Time [s]', r'Resistance [$\Omega$]',
                 'Temperature [K]')
         self.finished_sweep.emit(True)

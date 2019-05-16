@@ -190,6 +190,9 @@ class Meter(Keithley):
         else:
             self.meter.write(':SOUR:CURR:RANG {}'.format(value))
 
+    def switch_source_sign(self):
+        current_source = self.read_current()
+
 
 
 
