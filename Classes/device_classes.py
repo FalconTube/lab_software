@@ -42,9 +42,17 @@ class Keithley():
         self.read_values()
         return self.voltage
 
+    def read_source_voltage(self):
+        voltage = float(self.keithley.ask('SOUR:VOLT:LEV?').strip())
+        return voltage
+
     def read_current(self):
         self.read_values()
         return self.current
+
+    def read_source_current(self):
+        current = float(self.keithley.ask('SOUR:CURR:LEV?').strip())
+        return current
 
     def read_resistance(self):
         self.read_values()
@@ -58,10 +66,10 @@ class Keithley():
 
     def slowly_to_target(self, target, voltage=False):
         if voltage:
-            now_val = round(self.read_voltage(),8)
+            now_val = round(self.read_source_voltage(),8)
             steps = np.linspace(now_val, target, 20)
         else:
-            now_val = round(self.read_current(),8)
+            now_val = round(self.read_source_current(),8)
             steps = np.linspace(now_val, target, 20)
         if now_val == target:
             return
@@ -76,6 +84,9 @@ class Keithley():
                 self.set_current(i)
             time.sleep(0.2)
 
+    def get_mode(self):
+        mode = self.keithley.ask('SOUR:FUNC:MODE?').strip()
+        return mode
 
 class Gate(Keithley):
     def __init__(self, gpibnum, compliance=0.0010):
@@ -157,7 +168,6 @@ class Meter(Keithley):
         else:
             max_volts = 200
             range_val = 5*self.source_val if 5*self.source_val < max_volts else max_volts
-            #print(range_val)
             meter_setup = [
                 '*RST',
                 '*CLS',
