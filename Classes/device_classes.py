@@ -200,8 +200,13 @@ class Meter(Keithley):
         else:
             self.meter.write(':SOUR:CURR:RANG {}'.format(value))
 
-    def switch_source_sign(self):
-        current_source = self.read_current()
+    def switch_source_sign(self, is_voltmode):
+        if is_voltmode:
+            current_volt = self.read_voltage()
+            self.set_voltage(-1 * current_volt)
+        else:
+            current_current = self.read_current()
+            self.set_current(-1 * current_curr)
 
 
 

@@ -650,7 +650,9 @@ class ResLogger(QtCore.QObject):
                 )
             )
             if self.switching_steps:
-                self.meter.switch_source_sign()
+                metermode = self.meter.get_mode()
+                voltmode = True if (metermode=='CURR') else False
+                self.meter.switch_source_sign(is_voltmode)
         self.finish_sweep(t, r, temps, 'Time [s]', r'Resistance [$\Omega$]',
                 'Temperature [K]')
         self.finished_sweep.emit(True)
