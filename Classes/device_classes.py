@@ -206,7 +206,7 @@ class Meter(Keithley):
             self.set_voltage(-1 * current_volt)
         else:
             current_current = self.read_current()
-            self.set_current(-1 * current_curr)
+            self.set_current(-1 * current_current)
 
 
 

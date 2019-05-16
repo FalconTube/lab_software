@@ -256,7 +256,8 @@ class MainWindow(QMainWindow):
         self.thread.start()
 
     def start_resmeas(self):
-        switching_steps = True if self.TimeSwitchCechbox.isChecked() else False
+        switching_steps = True if self.TimeSwitchCeckbox.isChecked() else False
+        waittime = self.UI.WaittimeBox.value()
         gain_time = 60
         meterI = 1E-5
         axes = ['Time [s]', 'Resistance [Ohm]', 'Temperature [K]']
@@ -265,7 +266,7 @@ class MainWindow(QMainWindow):
         self.init_save(self.savename)
         savefile = self.savename
         self.gs = ResLogger(self.meter, self.savename, self.plot, self.plot_lower,
-                switching_steps)
+                switching_steps, waittime)
         # Also connect abort button now
         self.UI.StopResButton.released.connect(self.gs.stop)
         self.start_in_thread(self.gs)
@@ -566,7 +567,8 @@ class Sweep(QtCore.QObject):
 class ResLogger(QtCore.QObject):
     finished_sweep = QtCore.pyqtSignal(bool)
     new_data_available = QtCore.pyqtSignal(bool)
-    def __init__(self, meter, savename, plot, plot_lower, switching_steps):
+    def __init__(self, meter, savename, plot, plot_lower, switching_steps,
+            waittime):
         QtCore.QObject.__init__(self)
     #def __init__(self, meter, savename, plot, autogain_time, meterI):
         # self.gate = Gate(1)
@@ -579,6 +581,7 @@ class ResLogger(QtCore.QObject):
         self.gain_time = 0# in SEC
         self.meterI = 1
         self.switching_steps = switching_steps
+        self.waittime = waittime
 
         savestring = "# time[s], Voltage[V], R[Ohms], Current[A], Temperature[K]"
         self.create_savefile(savestring)
@@ -614,15 +617,15 @@ class ResLogger(QtCore.QObject):
         self.savefile.write(savestring + "\n")
 
     def start(self):
-        r = []
-        t = []
-        v = []
-        temps = []
+        self.r = []
+        self.t = []
+        self.v = []
+        self.temps = []
         start_time = time.time()
         #four_point_fac = np.pi * 2 / ln(2)
         reset_start = time.time()
         while self.measuring:
-            time.sleep(1)
+            time.sleep(self.waittime)
             time_elapsed = time.time() - start_time
             reset_time = time.time() - reset_start
             if self.gain_time != 0:
@@ -635,10 +638,10 @@ class ResLogger(QtCore.QObject):
             temperature = self.lakeshore.read_temp()
             resistance = meterV / meterI                             #without van der pauw geometrie
 
-            temps.append(temperature)
-            t.append(time_elapsed)
-            r.append(resistance)
-            v.append(meterV)
+            self.temps.append(temperature)
+            self.t.append(time_elapsed)
+            self.r.append(resistance)
+            self.v.append(meterV)
             # Plot values in real time
             self.new_data_available.emit(True)
             self.savefile.write(
@@ -646,14 +649,14 @@ class ResLogger(QtCore.QObject):
             )
             print(
                     "Time: {:.1f}, Voltage: {}, R: {}, Curr: {}, Temp: {}".format(
-                    time_elapsed, meterV, resistance, temperature
+                    time_elapsed, meterV, resistance, meterI, temperature
                 )
             )
             if self.switching_steps:
                 metermode = self.meter.get_mode()
-                voltmode = True if (metermode=='CURR') else False
+                is_voltmode = False if (metermode=='CURR') else True
                 self.meter.switch_source_sign(is_voltmode)
-        self.finish_sweep(t, r, temps, 'Time [s]', r'Resistance [$\Omega$]',
+        self.finish_sweep(self.t, self.r, self.temps, 'Time [s]', r'Resistance [$\Omega$]',
                 'Temperature [K]')
         self.finished_sweep.emit(True)
         # self.finish_sweep(t, r, temps, 'Time [s]', r'Resistance [$\Omega$]',
@@ -665,7 +668,7 @@ class ResLogger(QtCore.QObject):
         QApplication.restoreOverrideCursor()
 
     def get_data(self):
-        return self.x, self.plot_yup, self.plot_ylow
+        return self.t, self.r, self.temps
 
 
 if __name__ == '__main__':
