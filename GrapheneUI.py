@@ -26,7 +26,7 @@ class GrapheneGrowth(QMainWindow):
 
     def init_crystal_values(self):
         self.crystal_dict = {
-                'Crystal 1' : 70,
+                'Crystal 1' : 73,
                 'Crystal 2' : 50,
                 'Crystal 3' : 80,
                 }
@@ -61,6 +61,10 @@ class GrapheneGrowth(QMainWindow):
         self.graph.setLabel("left", "Current [mA]")
         self.graph.setLabel("bottom", "Passed time [s]")
 
+    def update_graph(self):
+        x, y = self.experiment.get_data()
+        self.plot.setData(x, y)
+
     # def init_controllers(self):
         # self.FUG = FUG()
         # self.korad = KoradSerial('COM5')
@@ -88,15 +92,9 @@ class GrapheneGrowth(QMainWindow):
         crystal = self.UI.CrystalBox.currentText()
         heatval = self.crystal_dict[crystal]
         print(heatval)
-        self.GrowCycle = GrowCycle(target=heatval, duration=10*60,
-                sleep_time=0.2, plot=self.plot, crystal=crystal)
-        self.thread = QtCore.QThread(self)
-        self.GrowCycle.grow_finished.connect(self.grow_callback)
-        self.GrowCycle.moveToThread(self.thread)
-        self.thread.started.connect(self.GrowCycle.do_grow)
-        self.UI.StatusLabel.setText('Growing!')
-        self.UI.StatusLabel.setStyleSheet('color: red')
-        self.thread.start()
+        self.experiment = GrowCycle(target=heatval, duration=10*60,
+                sleep_time=0.2, crystal=crystal)
+        self.start_in_thread(grow_callback, 'Growing!')
 
     def grow_callback(self):
         self.UI.StatusLabel.setText('Finished Grow')
@@ -104,14 +102,8 @@ class GrapheneGrowth(QMainWindow):
 
     def use_anneal(self):
         target = self.UI.AnnealValueBox.value()
-        self.Annealing = Annealing(target, 15*60, 0.5, self.plot)
-        self.thread = QtCore.QThread(self)
-        self.Annealing.anneal_finished.connect(self.anneal_callback)
-        self.Annealing.moveToThread(self.thread)
-        self.thread.started.connect(self.Annealing.do_anneal)
-        self.UI.StatusLabel.setText('Annealing!')
-        self.UI.StatusLabel.setStyleSheet('color: red')
-        self.thread.start()
+        self.experiment = Annealing(target, 15*60, 0.5)
+        self.start_in_thread(anneal_callback, 'Annealing!')
 
     def anneal_callback(self):
         self.UI.StatusLabel.setText('Finished Anneal')
@@ -119,14 +111,8 @@ class GrapheneGrowth(QMainWindow):
 
     def use_flash(self):
         target = self.UI.FlashValueBox.value()
-        self.Flashing = Flashing(target, 10, 0.1, self.plot)
-        self.thread = QtCore.QThread(self)
-        self.Flashing.flash_finished.connect(self.flash_callback)
-        self.Flashing.moveToThread(self.thread)
-        self.thread.started.connect(self.Flashing.do_flash)
-        self.UI.StatusLabel.setText('Flashing!')
-        self.UI.StatusLabel.setStyleSheet('color: red')
-        self.thread.start()
+        self.experiment = Flashing(target, 10, 0.1)
+        self.start_in_thread(flash_callback, 'Flashing!')
 
     def flash_callback(self):
         self.UI.StatusLabel.setText('Finished Flash')
@@ -135,15 +121,27 @@ class GrapheneGrowth(QMainWindow):
         curr_cycle += 1
         self.UI.CycleLabel.setText(str(curr_cycle))
 
+    def start_in_thread(self, callback, statustext):
+        self.thread = QtCore.QThread(self)
+        self.experiment.experiment_finished.connect(self.flash_callback)
+        self.experiment.moveToThread(self.thread)
+        self.experiment.new_data_available.connect(self.update_graph)
+        self.thread.started.connect(self.experiment.do_expemiment)
+        self.UI.StatusLabel.setText(statustext)
+        self.UI.StatusLabel.setStyleSheet('color: red')
+        QApplication.processEvents()
+        self.thread.start()
+
 
 class Heating(QtCore.QObject):
-    def __init__(self, target, hold_time, sleep_time=0.3, plot=None):
+    experiment_finished = QtCore.pyqtSignal(bool)
+    new_data_available = QtCore.pyqtSignal(bool)
+    def __init__(self, target, hold_time, sleep_time=0.3):
         QtCore.QObject.__init__(self)
         self.UI = uic.loadUi('GrapheneUI.ui', self)
         self.target = target
         self.duration = hold_time
         self.sleep_time = sleep_time
-        self.plot = plot
         self.init_controllers()
 
     def init_controllers(self):
@@ -191,9 +189,9 @@ class Heating(QtCore.QObject):
     def run(self):
         ''' Starts the actual heating to given target '''
         # Plotting
-        xdat = []
-        yemis = []
-        ykorad = []
+        self.xdat = []
+        self.yemis = []
+        self.ykorad = []
         xstart = time.time()
         # Declare heating steps
         korad_steps = {
@@ -207,19 +205,20 @@ class Heating(QtCore.QObject):
         start = time.time()
         passed = time.time() - start
         reached_target = False
+        # Good value before emission starts
         self.korad.set_current(2.2)
         while passed < self.duration:
             self.changed_korad = False
             passed = time.time() - start
             emission = self.FUG.read_emission()
             current = self.korad.get_current()
-            xdat.append(time.time() - xstart)
-            yemis.append(emission)
-            ykorad.append(current)
+            now = time.time()
+            self.xdat.append(now - xstart)
+            self.yemis.append(emission)
+            self.ykorad.append(current)
             if self.in_tolerance(emission, self.target, tolerance=0.01):
                 reached_target = True
-                self.plot.setData(xdat, yemis)
-                time.sleep(1)
+                self.new_data_available.emit(True)
                 continue
             # if not at target
             for percentage, stepsize in korad_steps.items():
@@ -229,23 +228,21 @@ class Heating(QtCore.QObject):
             time.sleep(self.sleep_time)
             if not reached_target:
                 start = time.time()
-            self.plot.setData(xdat, yemis)
+            self.new_data_available.emit(True)
         self.close_controllers()
 
+    def do_expemiment(self):
+        self.run()
+        self.experiment_finished.emit(True)
 
 class GrowCycle(Heating):
     ''' Grow for chosen Crystal '''
-    grow_finished = QtCore.pyqtSignal(bool)
     def __init__(self, target, duration, sleep_time, plot, crystal):
         super().__init__(target, duration, sleep_time, plot)
         # self.target = target
         # self.duration = duration
         self.crystal = crystal
 
-    @QtCore.pyqtSlot()
-    def do_grow(self):
-        self.run()
-        self.grow_finished.emit(True)
 
 class Annealing(Heating):
     ''' Perform annealing procedure heating  '''
@@ -255,29 +252,12 @@ class Annealing(Heating):
         # self.target = target
         # self.duration = duration
 
-    @QtCore.pyqtSlot()
-    def do_anneal(self):
-        self.run()
-        self.anneal_finished.emit(True)
 
 class Flashing(Heating):
     ''' Increase to flash value und hold for 10 sec '''
     flash_finished = QtCore.pyqtSignal(bool)
     def __init__(self, target, duration, sleep_time, plot):
         super().__init__(target, duration, sleep_time, plot)
-
-    @QtCore.pyqtSlot()
-    def do_flash(self):
-        self.run()
-        self.flash_finished.emit(True)
-
-# for _ in range(60):
-    # time.sleep(1)
-    # print(time.time())
-    # ser.write(b'*IDN?\r\n')
-    # answer = ser.readline().decode('utf-8')
-    # print(answer)
-# ser.close()
 
 if __name__ == '__main__':
     qApp = QApplication(sys.argv)
