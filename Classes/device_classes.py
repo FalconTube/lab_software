@@ -114,11 +114,11 @@ class Gate(Keithley):
         for i in gate_setup:
             self.gate.write(i)
 
-    def set_voltage(self, value):
-        self.gate.write(':SOUR:VOLT:LEV {}'.format(value))
+    # def set_voltage(self, value):
+        # self.gate.write(':SOUR:VOLT:LEV {}'.format(value))
 
-    def set_current(self, value):
-        self.gate.write(':SOUR:CURR:LEV {}'.format(value))
+    # def set_current(self, value):
+        # self.gate.write(':SOUR:CURR:LEV {}'.format(value))
 
 
 
@@ -202,10 +202,12 @@ class Meter(Keithley):
 
     def switch_source_sign(self, is_voltmode):
         if is_voltmode:
-            current_volt = self.read_voltage()
+            current_volt = self.read_source_voltage()
+            print(current_volt)
             self.set_voltage(-1 * current_volt)
         else:
-            current_current = self.read_current()
+            current_current = self.read_source_current()
+            print(current_current)
             self.set_current(-1 * current_current)
 
 
