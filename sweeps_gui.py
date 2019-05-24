@@ -86,7 +86,11 @@ class MainWindow(QMainWindow):
                 os.mkdir(savefolder)
             savepath = savefolder + 'testfile.dat'
         if os.path.isfile(savepath):
-            i = 1
+            try:
+                current_num = int(savepath.split('_')[-1])
+                i = current_num
+            else:
+                i = 1
             save_tmp = savepath.split('.')[0]
             while os.path.isfile(save_tmp + "_{}.dat".format(i)):
                 i += 1
