@@ -79,7 +79,7 @@ class MainWindow(QMainWindow):
 
 
     def init_save(self, savepath=None):
-        ''' Connects save button and sets default savename '''
+        ''' Connects save button and sets default self.savename '''
         if savepath == None:
             savefolder = 'testfolder/'
             if not os.path.isdir(savefolder):
@@ -93,8 +93,10 @@ class MainWindow(QMainWindow):
             savepath = save_tmp + "_{}.dat".format(i)
         self.savename = savepath
         self.UI.SavenameLabel.setText(savepath)
+        QApplication.processEvents()
 
     def choose_savename(self):
+        ''' Choose and set self.savename '''
         old_name = self.savename
         self.savename = QFileDialog.getSaveFileName(
                 self, 'Choose Savename', '.', self.tr("Text Files (*.dat)"))[0]
