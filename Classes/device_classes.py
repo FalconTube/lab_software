@@ -453,7 +453,7 @@ class Lockin():
         self.lockin.close()
 
     def read_current(self):
-        return 1
+        return 1E-5
 
 
 class FUG():

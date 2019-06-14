@@ -104,7 +104,7 @@ class GrapheneGrowth(QMainWindow):
 
     def use_anneal(self):
         target = self.UI.AnnealValueBox.value()
-        self.Annealing = Annealing(target, 15*60, 0.5, self.plot)
+        self.Annealing = Annealing(target, 20*60, 0.5, self.plot)
         self.thread = QtCore.QThread(self)
         self.Annealing.anneal_finished.connect(self.anneal_callback)
         self.Annealing.moveToThread(self.thread)
