@@ -457,10 +457,10 @@ class Lockin():
 
 
 class FUG():
-    def __init__(self):
+    def __init__(self, port):
         try:
             self.ser = serial.Serial(
-                port='COM13',
+                port=port,
                 baudrate=9600,
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
@@ -480,10 +480,10 @@ class FUG():
     def set_maxima(self):
         self.ser.flushOutput()
         self.ser.flushInput()
-        self.ser.write(b'>S0 1000')
+        self.ser.write(b'>S0 1000\r\n')
         self.ser.flushOutput()
         self.ser.flushInput()
-        self.ser.write(b'>S1 0.14')
+        self.ser.write(b'>S1 0.14\r\n')
 
     def read_emission(self):
         self.ser.flushOutput()
@@ -498,6 +498,7 @@ class FUG():
         self.ser.write(b'F0\r\n')
 
     def output_on(self):
+        time.sleep(0.3)
         self.ser.write(b'F1\r\n')
 
     def close(self):
