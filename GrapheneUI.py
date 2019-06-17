@@ -63,19 +63,29 @@ class GrapheneGrowth(QMainWindow):
             device = port.device
             self.UI.FugPortBox.addItem(device)
             self.UI.KoradPortBox.addItem(device)
-    
+
     def init_controllers(self):
+        self.controllers_ready = True
         fug_port = self.UI.FugPortBox.currentText()
         korad_port = self.UI.KoradPortBox.currentText()
-        print(fug_port, korad_port)
-        self.FUG = FUG(fug_port)
-        self.korad = KoradSerial(korad_port)
-        self.channel = self.korad.channels[0]
-        self.channel.current = 0.0
-        self.korad.output.on()
-        self.FUG.set_maxima()
-        self.FUG.output_on()
-        time.sleep(0.5)
+        try:
+            self.FUG = FUG(fug_port)
+            self.FUG.set_maxima()
+            self.FUG.output_on()
+        except:
+            self.controllers_ready = False
+            self.errormsg = QErrorMessage()
+            self.errormsg.showMessage('FUG could not be opened!')
+        try:
+            self.korad = KoradSerial(korad_port)
+            self.channel = self.korad.channels[0]
+            self.channel.current = 0.0
+            self.korad.output.on()
+        except:
+            self.controllers_ready = False
+            self.errormsg = QErrorMessage()
+            self.errormsg.showMessage('Korad could not be opened!')
+        time.sleep(0.2)
 
 
     def init_graph(self):
@@ -119,9 +129,11 @@ class GrapheneGrowth(QMainWindow):
         duration = self.UI.GrowthDurationBox.value()
         self.UI.GrowthTargetBox.setValue(heatval)
 
-        self.experiment = GrowCycle(target=heatval, duration=duration,
-                sleep_time=0.2, crystal=crystal)
-        self.start_in_thread(grow_callback, 'Growing!')
+        self.init_controllers()
+        if self.controllers_ready:
+            self.experiment = GrowCycle(target=heatval, duration=duration,
+                    sleep_time=0.2, crystal=crystal, FUG=self.Fug, Korad=self.Korad)
+            self.start_in_thread(grow_callback, 'Growing!')
 
     def grow_callback(self):
         self.UI.StatusLabel.setText('Finished Grow')
@@ -144,8 +156,9 @@ class GrapheneGrowth(QMainWindow):
         duration = self.UI.AnnealTimeBox.value() # in min
         duration *= 60
         self.init_controllers()
-        self.experiment = Annealing(target, duration, 0.5, self.FUG, self.korad)
-        self.start_in_thread(self.anneal_callback, 'Annealing!')
+        if self.controllers_ready:
+            self.experiment = Annealing(target, duration, 0.5, self.FUG, self.korad)
+            self.start_in_thread(self.anneal_callback, 'Annealing!')
 
     def anneal_callback(self):
         if self.nenion != None:
@@ -160,8 +173,9 @@ class GrapheneGrowth(QMainWindow):
         target = self.UI.FlashValueBox.value()
         duration = self.UI.FlashTimeBox.value() # in SEC
         self.init_controllers()
-        self.experiment = Flashing(target, duration, 0.1, self.FUG, self.korad)
-        self.start_in_thread(self.flash_callback, 'Flashing!')
+        if self.controllers_ready:
+            self.experiment = Flashing(target, duration, 0.1, self.FUG, self.korad)
+            self.start_in_thread(self.flash_callback, 'Flashing!')
 
     def flash_callback(self):
         self.UI.StatusLabel.setText('Finished Flash')
@@ -208,8 +222,6 @@ class Heating(QtCore.QObject):
         self.target = target
         self.duration = hold_time
         self.sleep_time = sleep_time
-        self.FUG = FUG
-        self.korad = Korad
 
     def close_controllers(self):
         self.korad.set_current(0.0)
