@@ -174,6 +174,9 @@ class GrapheneGrowth(QMainWindow):
         QApplication.processEvents()
         self.thread.start()
 
+    def goto_pos(pos):
+        self.nenion.goto_pos(400000)
+
 
 class Heating(QtCore.QObject):
     experiment_finished = QtCore.pyqtSignal(bool)
