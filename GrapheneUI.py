@@ -6,7 +6,9 @@ from PyQt5 import QtCore, uic
 from PyQt5.QtWidgets import (
     QMainWindow,
     QApplication,
-    QLabel
+    QLabel,
+    QErrorMessage,
+    QMessageBox
     )
 from Classes.device_classes import *
 #from Classes.measurement_class import Measurement
@@ -23,6 +25,7 @@ class GrapheneGrowth(QMainWindow):
         self.init_graph()
         self.init_port_selection()
         self.init_crystal_dropdown()
+        self.nenion = None
         self.show()
 
     def init_crystal_values(self):
@@ -95,18 +98,10 @@ class GrapheneGrowth(QMainWindow):
         x, y = self.experiment.get_data()
         self.plot.setData(x, y)
 
-    # def init_controllers(self):
-        # self.FUG = FUG()
-        # self.korad = KoradSerial('COM5')
-        # self.channel = self.korad.channels[0]
-        # self.korad.output.off()
-        # self.channel.current = 0.0
-
     def setup_buttons(self):
         self.UI.FlashButton.released.connect(self.use_flash)
         self.UI.AnnealButton.released.connect(self.use_anneal)
         self.UI.GrowButton.released.connect(self.use_grow)
-        #self.UI.GrowButton.released.connect(self.go_emission)
 
     def ramp_to_current(self, target, time):
         ''' Ramps to target value over chosen time '''
@@ -133,6 +128,18 @@ class GrapheneGrowth(QMainWindow):
         self.UI.StatusLabel.setStyleSheet('color: black')
 
     def use_anneal(self):
+        # Set pressure to 1E-7 if checked
+        if self.UI.RadioPressYes.isChecked():
+            try:
+                QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+                self.use_nenion()
+                self.nenion.goto_pos(420000)
+                self.time.sleep(5)
+                QApplication.restoreOverrideCursor()
+            except:
+                QApplication.restoreOverrideCursor()
+                return
+        # Now do the annealing
         target = self.UI.AnnealValueBox.value()
         duration = self.UI.AnnealTimeBox.value() # in min
         duration *= 60
@@ -141,6 +148,11 @@ class GrapheneGrowth(QMainWindow):
         self.start_in_thread(self.anneal_callback, 'Annealing!')
 
     def anneal_callback(self):
+        if self.nenion != None:
+            QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+            self.nenion.close_pos()
+            time.sleep(5)
+            QApplication.restoreOverrideCursor()
         self.UI.StatusLabel.setText('Finished Anneal')
         self.UI.StatusLabel.setStyleSheet('color: black')
 
@@ -174,8 +186,18 @@ class GrapheneGrowth(QMainWindow):
         QApplication.processEvents()
         self.thread.start()
 
-    def goto_pos(pos):
-        self.nenion.goto_pos(400000)
+    def use_nenion(self):
+        ip = self.UI.NenionIP.text()
+        port = int(self.UI.NenionPort.text())
+        try:
+            if self.nenion == None:
+                self.nenion = Nenion(ip, port)
+            else:
+                self.nenion = self.nenion
+        except:
+            self.errormsg = QErrorMessage()
+            self.errormsg.showMessage('Nenion could not be opened!')
+
 
 
 class Heating(QtCore.QObject):

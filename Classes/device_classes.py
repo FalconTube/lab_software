@@ -10,6 +10,7 @@ import serial
 import serial.tools.list_ports
 import weakref
 import datetime
+import socket
 
 
 class Keithley():
@@ -570,6 +571,32 @@ class AML:
         out = instring.split('1A@')[-1].split(',')[0]
         out = out.strip()
         return float(out)
+
+class Nenion:
+    ''' Class for communication with Nenion valve over TCP/IP '''
+    def __init__(self, ip='134.95.66.95', port=1512):
+        self.IP = ip
+        self.PORT = port
+        self.init_tcp()
+
+    def init_tcp(self):
+        ''' Initialized TCP/IP connection on given IP and PORT '''
+        BUFFER_SIZE = 80  # Normally 1024, but we want fast response
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.s.bind((self.IP, self.PORT))
+
+    def write(self, msg):
+        ''' Sends message as bytecode with <enter> in the end'''
+        self.s.send(b'{}\r'.format(msg))
+
+    def goto_pos(self, pos):
+        actual_pos = int(pos/25) # Need to convert from 1E6 steps to 40k steps
+        msg = 'G{}'.format(actual_pos)
+        self.write(msg)
+
+    def close_pos(self):
+        self.write('G0')
+
 
 if __name__ == '__main__':
     print('\
