@@ -114,11 +114,11 @@ class Gate(Keithley):
         for i in gate_setup:
             self.gate.write(i)
 
-    def set_voltage(self, value):
-        self.gate.write(':SOUR:VOLT:LEV {}'.format(value))
+    # def set_voltage(self, value):
+        # self.gate.write(':SOUR:VOLT:LEV {}'.format(value))
 
-    def set_current(self, value):
-        self.gate.write(':SOUR:CURR:LEV {}'.format(value))
+    # def set_current(self, value):
+        # self.gate.write(':SOUR:CURR:LEV {}'.format(value))
 
 
 
@@ -202,10 +202,12 @@ class Meter(Keithley):
 
     def switch_source_sign(self, is_voltmode):
         if is_voltmode:
-            current_volt = self.read_voltage()
+            current_volt = self.read_source_voltage()
+            print(current_volt)
             self.set_voltage(-1 * current_volt)
         else:
-            current_current = self.read_current()
+            current_current = self.read_source_current()
+            print(current_current)
             self.set_current(-1 * current_current)
 
 
@@ -451,14 +453,14 @@ class Lockin():
         self.lockin.close()
 
     def read_current(self):
-        return 1
+        return 1E-5
 
 
 class FUG():
-    def __init__(self):
+    def __init__(self, port):
         try:
             self.ser = serial.Serial(
-                port='COM13',
+                port=port,
                 baudrate=9600,
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
@@ -478,10 +480,10 @@ class FUG():
     def set_maxima(self):
         self.ser.flushOutput()
         self.ser.flushInput()
-        self.ser.write(b'>S0 1000')
+        self.ser.write(b'>S0 1000\r\n')
         self.ser.flushOutput()
         self.ser.flushInput()
-        self.ser.write(b'>S1 0.14')
+        self.ser.write(b'>S1 0.14\r\n')
 
     def read_emission(self):
         self.ser.flushOutput()
@@ -496,6 +498,7 @@ class FUG():
         self.ser.write(b'F0\r\n')
 
     def output_on(self):
+        time.sleep(0.3)
         self.ser.write(b'F1\r\n')
 
     def close(self):
