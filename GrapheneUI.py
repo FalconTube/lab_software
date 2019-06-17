@@ -22,6 +22,7 @@ class GrapheneGrowth(QMainWindow):
         self.init_crystal_values()
         self.init_graph()
         self.init_port_selection()
+        self.init_crystal_dropdown()
         self.show()
 
     def init_crystal_values(self):
@@ -29,7 +30,22 @@ class GrapheneGrowth(QMainWindow):
                 'Crystal 1' : 73,
                 'Crystal 2' : 50,
                 'Crystal 3' : 80,
+                'Free' : 0,
                 }
+
+
+    def update_crystal_val(self):
+        crystal = self.UI.CrystalBox.currentText()
+        self.UI.GrowthTargetBox.setValue(self.crystal_dict[crystal])
+        if crystal == 'Free':
+            self.UI.GrowthTargetBox.setReadOnly(False)
+        else:
+            self.UI.GrowthTargetBox.setReadOnly(True)
+
+    def init_crystal_dropdown(self):
+        crystal = self.UI.CrystalBox.currentText()
+        self.UI.GrowthTargetBox.setValue(self.crystal_dict[crystal])
+        self.UI.CrystalBox.currentIndexChanged.connect(self.update_crystal_val)
 
     def init_box_values(self):
         self.UI.FlashValueBox.setDecimals(1)
@@ -105,8 +121,10 @@ class GrapheneGrowth(QMainWindow):
     def use_grow(self):
         crystal = self.UI.CrystalBox.currentText()
         heatval = self.crystal_dict[crystal]
-        print(heatval)
-        self.experiment = GrowCycle(target=heatval, duration=10*60,
+        duration = self.UI.GrowthDurationBox.value()
+        self.UI.GrowthTargetBox.setValue(heatval)
+
+        self.experiment = GrowCycle(target=heatval, duration=duration,
                 sleep_time=0.2, crystal=crystal)
         self.start_in_thread(grow_callback, 'Growing!')
 
@@ -116,8 +134,10 @@ class GrapheneGrowth(QMainWindow):
 
     def use_anneal(self):
         target = self.UI.AnnealValueBox.value()
+        duration = self.UI.AnnealTimeBox.value() # in min
+        duration *= 60
         self.init_controllers()
-        self.experiment = Annealing(target, 15*60, 0.5, self.FUG, self.korad)
+        self.experiment = Annealing(target, duration, 0.5, self.FUG, self.korad)
         self.start_in_thread(self.anneal_callback, 'Annealing!')
 
     def anneal_callback(self):
@@ -126,8 +146,9 @@ class GrapheneGrowth(QMainWindow):
 
     def use_flash(self):
         target = self.UI.FlashValueBox.value()
+        duration = self.UI.FlashTimeBox.value() # in SEC
         self.init_controllers()
-        self.experiment = Flashing(target, 10, 0.1, self.FUG, self.korad)
+        self.experiment = Flashing(target, duration, 0.1, self.FUG, self.korad)
         self.start_in_thread(self.flash_callback, 'Flashing!')
 
     def flash_callback(self):
@@ -138,8 +159,13 @@ class GrapheneGrowth(QMainWindow):
         self.UI.CycleLabel.setText(str(curr_cycle))
 
     def start_in_thread(self, callback, statustext):
+        try:
+            self.StopButton.disconnect()
+        except:
+            pass
+        self.StopButton.released.connect(self.experiment.stop)
         self.thread = QtCore.QThread(self)
-        self.experiment.experiment_finished.connect(self.flash_callback)
+        self.experiment.experiment_finished.connect(callback)
         self.experiment.moveToThread(self.thread)
         self.experiment.new_data_available.connect(self.update_graph)
         self.thread.started.connect(self.experiment.do_expemiment)
@@ -160,9 +186,8 @@ class Heating(QtCore.QObject):
         self.FUG = FUG
         self.korad = Korad
 
-
     def close_controllers(self):
-        # self.korad.channel.current = 0.0
+        self.korad.set_current(0.0)
         self.korad.output.off()
         self.FUG.close()
         self.korad.close()
@@ -170,7 +195,6 @@ class Heating(QtCore.QObject):
     def in_tolerance(self, value, target, tolerance=0.01):
         lower = target - target * tolerance
         upper = target + target * tolerance
-        # print(lower, value, upper)
         return True if lower <= value <= upper else False
 
     def percentage_pos(self, value, perc):
@@ -182,15 +206,10 @@ class Heating(QtCore.QObject):
     def emission_step(self, emission, target, perc, current, current_step):
         if not self.changed_korad:
             if emission < self.percentage_neg(target, perc):
-                # print('Changing with stepsize {}'.format(current_step))
-                # print('emission too low')
                 current += current_step
                 self.korad.set_current(current)
                 self.changed_korad = True
             if emission > self.percentage_pos(target, perc):
-                # print('Changing with stepsize {}'.format(current_step))
-                # print('emission too high')
-                current -= current_step
                 self.korad.set_current(current)
                 self.changed_korad = True
 
@@ -250,6 +269,9 @@ class Heating(QtCore.QObject):
     def get_data(self):
         return self.xdat, self.yemis
 
+    def stop(self):
+        self.duration = 0
+
 class GrowCycle(Heating):
     ''' Grow for chosen Crystal '''
     def __init__(self, target, duration, sleep_time, crystal, FUG, Korad):
@@ -261,7 +283,6 @@ class GrowCycle(Heating):
 
 class Annealing(Heating):
     ''' Perform annealing procedure heating  '''
-    anneal_finished = QtCore.pyqtSignal(bool)
     def __init__(self, target, duration, sleep_time, FUG, Korad):
         super().__init__(target, duration, sleep_time, FUG, Korad)
         # self.target = target
@@ -270,7 +291,6 @@ class Annealing(Heating):
 
 class Flashing(Heating):
     ''' Increase to flash value und hold for 10 sec '''
-    flash_finished = QtCore.pyqtSignal(bool)
     def __init__(self, target, duration, sleep_time, FUG, Korad):
         super().__init__(target, duration, sleep_time, FUG, Korad)
 
