@@ -162,7 +162,7 @@ class Heating(QtCore.QObject):
 
 
     def close_controllers(self):
-        self.korad.channel.current = 0.0
+        # self.korad.channel.current = 0.0
         self.korad.output.off()
         self.FUG.close()
         self.korad.close()
@@ -170,7 +170,7 @@ class Heating(QtCore.QObject):
     def in_tolerance(self, value, target, tolerance=0.01):
         lower = target - target * tolerance
         upper = target + target * tolerance
-        print(lower, value, upper)
+        # print(lower, value, upper)
         return True if lower <= value <= upper else False
 
     def percentage_pos(self, value, perc):
@@ -180,16 +180,16 @@ class Heating(QtCore.QObject):
         return value - value * perc
 
     def emission_step(self, emission, target, perc, current, current_step):
-        print('Changing with stepsize {}'.format(current_step))
-        print(self.changed_korad)
         if not self.changed_korad:
             if emission < self.percentage_neg(target, perc):
-                print('emission too low')
+                # print('Changing with stepsize {}'.format(current_step))
+                # print('emission too low')
                 current += current_step
                 self.korad.set_current(current)
                 self.changed_korad = True
             if emission > self.percentage_pos(target, perc):
-                print('emission too high')
+                # print('Changing with stepsize {}'.format(current_step))
+                # print('emission too high')
                 current -= current_step
                 self.korad.set_current(current)
                 self.changed_korad = True
@@ -208,6 +208,10 @@ class Heating(QtCore.QObject):
                 0.20 : 0.02,
                 0.10 : 0.01,
                 0.05 : 0.005,
+                0.04 : 0.004,
+                0.03 : 0.003,
+                0.02 : 0.002,
+                0.01 : 0.001,
                 }
 
         start = time.time()
