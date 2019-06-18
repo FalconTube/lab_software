@@ -583,14 +583,19 @@ class Nenion:
         ''' Initialized TCP/IP connection on given IP and PORT '''
         BUFFER_SIZE = 80  # Normally 1024, but we want fast response
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.s.bind((self.IP, self.PORT))
+        self.s.settimeout(3.0)
+        self.s.connect((self.IP, self.PORT))
+        time.sleep(2)
 
     def write(self, msg):
+        msg = msg.strip() + '\r'
         ''' Sends message as bytecode with <enter> in the end'''
-        self.s.send(b'{}\r'.format(msg))
+        self.s.send(msg.encode())
 
     def goto_pos(self, pos):
+        print(pos)
         actual_pos = int(pos/25) # Need to convert from 1E6 steps to 40k steps
+        print(actual_pos)
         msg = 'G{}'.format(actual_pos)
         self.write(msg)
 

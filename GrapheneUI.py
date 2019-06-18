@@ -133,10 +133,12 @@ class GrapheneGrowth(QMainWindow):
             try:
                 QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
                 self.use_nenion()
-                self.nenion.goto_pos(420000)
-                self.time.sleep(5)
+                self.nenion.write('E')
+                time.sleep(0.2)
+                self.nenion.goto_pos(427000)
+                time.sleep(5)
                 QApplication.restoreOverrideCursor()
-            except:
+            except ValueError:
                 QApplication.restoreOverrideCursor()
                 return
         # Now do the annealing
@@ -144,6 +146,7 @@ class GrapheneGrowth(QMainWindow):
         duration = self.UI.AnnealTimeBox.value() # in min
         duration *= 60
         self.init_controllers()
+        print('Annealing')
         self.experiment = Annealing(target, duration, 0.5, self.FUG, self.korad)
         self.start_in_thread(self.anneal_callback, 'Annealing!')
 
@@ -235,6 +238,7 @@ class Heating(QtCore.QObject):
                 self.korad.set_current(current)
                 self.changed_korad = True
             if emission > self.percentage_pos(target, perc):
+                current -= current_step
                 self.korad.set_current(current)
                 self.changed_korad = True
 
