@@ -593,13 +593,15 @@ class Nenion:
         self.s.send(msg.encode())
 
     def goto_pos(self, pos):
-        print(pos)
+        self.write('H')
+        time.sleep(0.2)
         actual_pos = int(pos/25) # Need to convert from 1E6 steps to 40k steps
-        print(actual_pos)
         msg = 'G{}'.format(actual_pos)
         self.write(msg)
 
     def close_pos(self):
+        self.write('H')
+        time.sleep(0.2)
         self.write('G0')
 
 
