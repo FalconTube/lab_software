@@ -309,6 +309,10 @@ class KoradSerial(object):
         amp_chann = self.channels[0]
         amp_chann.current = round_value(value)
 
+    def set_voltage(self, value):
+        volt_chann = self.channels[0]
+        volt_chann.voltage = value
+
     def get_current(self):
         amp_chann = self.channels[0]
         return amp_chann.current

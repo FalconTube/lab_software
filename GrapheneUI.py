@@ -26,6 +26,7 @@ class GrapheneGrowth(QMainWindow):
         self.init_port_selection()
         self.init_crystal_dropdown()
         self.nenion = None
+        self.current_multicycle_num = 0
         self.show()
 
     def init_crystal_values(self):
@@ -58,11 +59,18 @@ class GrapheneGrowth(QMainWindow):
         self.UI.AnnealValueBox.setMaximum(200)
 
     def init_port_selection(self):
+        '''Init dropdown menues for fug and korad '''
         ports = serial.tools.list_ports.comports()
         for port in ports:
             device = port.device
             self.UI.FugPortBox.addItem(device)
             self.UI.KoradPortBox.addItem(device)
+        # Set standard values
+        for port in ports:
+            if 'COM3' in port.device:
+                self.UI.FugPortBox.setCurrentText('COM3')
+            if 'COM5' in port.device:
+                self.UI.KoradPortBox.setCurrentText('COM5')
 
     def init_controllers(self):
         self.controllers_ready = True
@@ -311,6 +319,7 @@ class Heating(QtCore.QObject):
         passed = time.time() - start
         reached_target = False
         # Good value before emission starts
+        self.korad.set_voltage(18)
         self.korad.set_current(2.2)
         while passed < self.duration:
             self.changed_korad = False

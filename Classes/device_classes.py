@@ -441,7 +441,7 @@ class Lockin():
         self.lockin.ask('DDEF1,0,0')
 
     def read_voltage(self):
-        return(self.lockin.ask('OUTR? 1'))
+        return float(self.lockin.ask('OUTR? 1'))
     
     def auto_gain(self):
         self.lockin.write('AGAN')
@@ -454,7 +454,7 @@ class Lockin():
         self.lockin.close()
 
     def read_current(self):
-        return 1E-5
+        return 1E-6
 
 
 class FUG():
