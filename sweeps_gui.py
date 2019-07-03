@@ -170,7 +170,7 @@ class MainWindow(QMainWindow):
             self.gate = Gate(port, compliance)
             self.gate.slowly_to_target(fixed_volt, voltage=True)
             self.label_connected(self.UI.GateLabel)
-        except ValueError:
+        except:
             self.label_failed(self.UI.GateLabel)
         QApplication.restoreOverrideCursor()
 
@@ -191,7 +191,7 @@ class MainWindow(QMainWindow):
             QApplication.processEvents()
             self.meter = Meter(port, source_val, fwire, source_volt, speed)
             self.label_connected(self.UI.KMeterLabel)
-        except ValueError:
+        except:
             self.label_failed(self.UI.KMeterLabel)
         QApplication.restoreOverrideCursor()
 
@@ -535,13 +535,13 @@ class Sweep(QtCore.QObject):
             gatemode = self.gate.get_mode()
             gatevolt = True if gatemode == 'VOLT' else False
             self.slowly_to_target(0, self.gate, voltage=gatevolt)
-        except ValueError:
+        except:
             pass
         try:
             metermode = self.meter.get_mode()
             metervolt = True if metermode == 'VOLT' else False
             self.slowly_to_target(0, self.meter, voltage=metervolt)
-        except ValueError:
+        except:
             pass
 
 
