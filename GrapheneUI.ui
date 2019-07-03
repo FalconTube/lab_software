@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1706</width>
+    <width>1704</width>
     <height>917</height>
    </rect>
   </property>
@@ -49,13 +49,6 @@
          </item>
          <item>
           <layout class="QGridLayout" name="gridLayout">
-           <item row="0" column="3">
-            <widget class="QLabel" name="label_7">
-             <property name="text">
-              <string>Time</string>
-             </property>
-            </widget>
-           </item>
            <item row="3" column="3">
             <widget class="QSpinBox" name="FlashTimeBox">
              <property name="maximum">
@@ -79,20 +72,6 @@
              </property>
             </widget>
            </item>
-           <item row="3" column="2">
-            <widget class="QLabel" name="label_5">
-             <property name="text">
-              <string>mA</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="2">
-            <widget class="QLabel" name="label_4">
-             <property name="text">
-              <string>mA</string>
-             </property>
-            </widget>
-           </item>
            <item row="2" column="0">
             <widget class="QPushButton" name="AnnealButton">
              <property name="text">
@@ -100,13 +79,45 @@
              </property>
             </widget>
            </item>
-           <item row="2" column="3">
-            <widget class="QSpinBox" name="AnnealTimeBox">
-             <property name="maximum">
-              <number>120</number>
+           <item row="2" column="4">
+            <widget class="QLabel" name="label_8">
+             <property name="text">
+              <string>min</string>
              </property>
-             <property name="value">
-              <number>20</number>
+            </widget>
+           </item>
+           <item row="3" column="2">
+            <widget class="QLabel" name="label_5">
+             <property name="text">
+              <string>mA</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>Cycle #</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLabel" name="CycleLabel">
+             <property name="text">
+              <string>0</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="4">
+            <widget class="QLabel" name="label_9">
+             <property name="text">
+              <string>sec</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3">
+            <widget class="QLabel" name="label_7">
+             <property name="text">
+              <string>Time</string>
              </property>
             </widget>
            </item>
@@ -123,6 +134,13 @@
              </property>
             </widget>
            </item>
+           <item row="2" column="2">
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>mA</string>
+             </property>
+            </widget>
+           </item>
            <item row="3" column="0">
             <widget class="QPushButton" name="FlashButton">
              <property name="text">
@@ -130,31 +148,37 @@
              </property>
             </widget>
            </item>
-           <item row="0" column="1">
-            <widget class="QLabel" name="CycleLabel">
-             <property name="text">
-              <string>0</string>
+           <item row="2" column="3">
+            <widget class="QSpinBox" name="AnnealTimeBox">
+             <property name="maximum">
+              <number>120</number>
+             </property>
+             <property name="value">
+              <number>20</number>
              </property>
             </widget>
            </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label">
-             <property name="text">
-              <string>Cycle #</string>
+           <item row="4" column="3">
+            <widget class="QDoubleSpinBox" name="MultiCycleNumBox">
+             <property name="decimals">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <double>20.000000000000000</double>
              </property>
             </widget>
            </item>
-           <item row="2" column="4">
-            <widget class="QLabel" name="label_8">
+           <item row="4" column="4">
+            <widget class="QLabel" name="label_15">
              <property name="text">
-              <string>min</string>
+              <string>#</string>
              </property>
             </widget>
            </item>
-           <item row="3" column="4">
-            <widget class="QLabel" name="label_9">
+           <item row="4" column="0" colspan="3">
+            <widget class="QPushButton" name="MultiCycleButton">
              <property name="text">
-              <string>sec</string>
+              <string>MultiCycle</string>
              </property>
             </widget>
            </item>
@@ -165,13 +189,49 @@
       </item>
       <item>
        <widget class="QGroupBox" name="groupBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="title">
          <string>Graphene Growth</string>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_2">
+         <property name="rightMargin">
+          <number>6</number>
+         </property>
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout">
-           <item>
+          <layout class="QGridLayout" name="gridLayout_4">
+           <item row="2" column="1">
+            <widget class="QLabel" name="label_10">
+             <property name="text">
+              <string>Target [mA]</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QDoubleSpinBox" name="GrowthTargetBox">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+             <property name="decimals">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <double>140.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QPushButton" name="GrowButton">
+             <property name="text">
+              <string>Start Growth</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
             <widget class="QComboBox" name="CrystalBox">
              <item>
               <property name="text">
@@ -188,12 +248,27 @@
                <string>Crystal 3</string>
               </property>
              </item>
+             <item>
+              <property name="text">
+               <string>Free</string>
+              </property>
+             </item>
             </widget>
            </item>
-           <item>
-            <widget class="QPushButton" name="GrowButton">
+           <item row="1" column="1">
+            <widget class="QLabel" name="label_11">
              <property name="text">
-              <string>Start Growth</string>
+              <string>Duration [min]</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QDoubleSpinBox" name="GrowthDurationBox">
+             <property name="decimals">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <double>10.000000000000000</double>
              </property>
             </widget>
            </item>
@@ -205,17 +280,14 @@
       <item>
        <widget class="QGroupBox" name="groupBox_3">
         <property name="title">
-         <string>Inspection</string>
+         <string>Heaters Inspection</string>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_4">
          <item>
           <layout class="QGridLayout" name="gridLayout_2">
-           <item row="1" column="0">
-            <widget class="QComboBox" name="FugPortBox"/>
-           </item>
-           <item row="1" column="1">
-            <widget class="QComboBox" name="KoradPortBox"/>
-           </item>
+           <property name="spacing">
+            <number>6</number>
+           </property>
            <item row="0" column="0">
             <widget class="QLabel" name="label_2">
              <property name="text">
@@ -223,10 +295,118 @@
              </property>
             </widget>
            </item>
+           <item row="1" column="1">
+            <widget class="QComboBox" name="KoradPortBox"/>
+           </item>
            <item row="0" column="1">
             <widget class="QLabel" name="label_3">
              <property name="text">
               <string>Korad Port</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QComboBox" name="FugPortBox"/>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="NenionLeakvale">
+        <property name="font">
+         <font>
+          <pointsize>11</pointsize>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
+        <property name="title">
+         <string>Nenion Leakvalve</string>
+        </property>
+        <property name="flat">
+         <bool>false</bool>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <layout class="QGridLayout" name="gridLayout_6">
+           <item row="0" column="1">
+            <widget class="QLabel" name="label_13">
+             <property name="text">
+              <string>Port</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLineEdit" name="NenionIP">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>134.95.66.95</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="NenionPort">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>1512</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QRadioButton" name="RadioPressNo">
+             <property name="text">
+              <string>No</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QRadioButton" name="RadioPressYes">
+             <property name="text">
+              <string>Yes</string>
+             </property>
+             <property name="checked">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_12">
+             <property name="text">
+              <string>IP</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0" colspan="2">
+            <widget class="QLabel" name="label_14">
+             <property name="styleSheet">
+              <string notr="true"/>
+             </property>
+             <property name="text">
+              <string>Automatic Pressure Control?</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
              </property>
             </widget>
            </item>
@@ -296,8 +476,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1706</width>
-     <height>36</height>
+     <width>1704</width>
+     <height>30</height>
     </rect>
    </property>
   </widget>

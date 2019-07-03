@@ -10,6 +10,7 @@ import serial
 import serial.tools.list_ports
 import weakref
 import datetime
+import socket
 
 
 class Keithley():
@@ -440,7 +441,7 @@ class Lockin():
         self.lockin.ask('DDEF1,0,0')
 
     def read_voltage(self):
-        return(self.lockin.ask('OUTR? 1'))
+        return float(self.lockin.ask('OUTR? 1'))
     
     def auto_gain(self):
         self.lockin.write('AGAN')
@@ -453,7 +454,7 @@ class Lockin():
         self.lockin.close()
 
     def read_current(self):
-        return 1E-5
+        return 1E-6
 
 
 class FUG():
@@ -570,6 +571,39 @@ class AML:
         out = instring.split('1A@')[-1].split(',')[0]
         out = out.strip()
         return float(out)
+
+class Nenion:
+    ''' Class for communication with Nenion valve over TCP/IP '''
+    def __init__(self, ip='134.95.66.95', port=1512):
+        self.IP = ip
+        self.PORT = port
+        self.init_tcp()
+
+    def init_tcp(self):
+        ''' Initialized TCP/IP connection on given IP and PORT '''
+        BUFFER_SIZE = 80  # Normally 1024, but we want fast response
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.s.settimeout(3.0)
+        self.s.connect((self.IP, self.PORT))
+        time.sleep(2)
+
+    def write(self, msg):
+        msg = msg.strip() + '\r'
+        ''' Sends message as bytecode with <enter> in the end'''
+        self.s.send(msg.encode())
+
+    def goto_pos(self, pos):
+        self.write('H')
+        time.sleep(0.2)
+        actual_pos = int(pos/25) # Need to convert from 1E6 steps to 40k steps
+        msg = 'G{}'.format(actual_pos)
+        self.write(msg)
+
+    def close_pos(self):
+        self.write('H')
+        time.sleep(0.2)
+        self.write('G0')
+
 
 if __name__ == '__main__':
     print('\
