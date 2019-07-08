@@ -530,19 +530,22 @@ class Sweep(QtCore.QObject):
     def finish_sweep(self, x, y_up, y_low, xlabel='', y_uplabel='', y_lowlabel=''):
         # Here the measurement is aborted or finished
 
-        # Put all devices to zero and close them
-        try:
-            gatemode = self.gate.get_mode()
-            gatevolt = True if gatemode == 'VOLT' else False
-            self.slowly_to_target(0, self.gate, voltage=gatevolt)
-        except:
-            pass
-        try:
-            metermode = self.meter.get_mode()
-            metervolt = True if metermode == 'VOLT' else False
-            self.slowly_to_target(0, self.meter, voltage=metervolt)
-        except:
-            pass
+        # Put gate to zero
+        if not self.is_sd_sweep:
+            try:
+                gatemode = self.gate.get_mode()
+                gatevolt = True if gatemode == 'VOLT' else False
+                self.slowly_to_target(0, self.gate, voltage=gatevolt)
+            except:
+                pass
+        # Put meter to zero
+        else:
+            try:
+                metermode = self.meter.get_mode()
+                metervolt = True if metermode == 'VOLT' else False
+                self.slowly_to_target(0, self.meter, voltage=metervolt)
+            except:
+                pass
 
 
         self.savefile.close()
