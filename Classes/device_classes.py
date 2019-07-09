@@ -27,6 +27,7 @@ class Keithley():
         print("GPIB::{}".format(gpibnum))
         self.keithley = rm.open_resource("GPIB::{}".format(gpibnum))
         print('Initialized Keithley number {}'.format(gpibnum))
+        self.zero_before_init()
 
     def close(self):
         self.keithley.close()
@@ -75,8 +76,8 @@ class Keithley():
         if now_val == target:
             return
         # Need to reverse steps if going downwards
-        if now_val > abs(target):
-            steps = steps[::-1]
+        # if now_val > abs(target):
+            # steps = steps[::-1]
 
         for i in steps:
             if voltage:
@@ -88,6 +89,14 @@ class Keithley():
     def get_mode(self):
         mode = self.keithley.ask('SOUR:FUNC:MODE?').strip()
         return mode
+
+    def zero_before_init(self):
+        mode = self.get_mode()
+        if 'VOLT' in mode:
+            self.slowly_to_target(0, voltage=True)
+        else:
+            self.slowly_to_target(0, voltage=False)
+
 
 class Gate(Keithley):
     def __init__(self, gpibnum, compliance=0.0010):
@@ -139,7 +148,7 @@ class Meter(Keithley):
 
     def _initialize_meter(self):
         self.meter = self.keithley
-        
+
         if not self.set_source_voltage:
             max_curr = 1
             range_val = 5*self.source_val if 5*self.source_val < max_curr else max_curr
@@ -157,7 +166,7 @@ class Meter(Keithley):
                 # Turn on 4-wire sensing
                 ':SYST:RSEN {}'.format(self.fwire_str),
                 # Set current source to 10 uA
-                'SENS:VOLT:NPLCycles 6', 
+                'SENS:VOLT:NPLCycles 6',
                 # ':SOUR:CURR:LEV {}'.format(self.source_val),
                 'SENSE:VOLT:NPLCycles {}'.format(self.speed), # Set integration time
                 ':OUTP ON'
@@ -193,7 +202,6 @@ class Meter(Keithley):
                 self.meter.write(i)
 
             self.slowly_to_target(self.source_val, voltage=True)
-            
 
     def set_range(self, value, is_volts=True):
         if is_volts:
