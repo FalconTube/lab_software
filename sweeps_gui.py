@@ -21,6 +21,7 @@ class MainWindow(QMainWindow):
         self.init_port_selection()
         self.init_connect_buttons()
         self.init_save()
+        self.INIT = Initializer(self.UI)
         #GS = Gatesweep(Measurement)
         self.show()
 
@@ -160,96 +161,68 @@ class MainWindow(QMainWindow):
         label.setStyleSheet('color: black')
 
     def init_gate(self):
-        QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
-        port = self.UI.GatePortBox.currentText()
-        compliance = self.UI.GateComplianceBox.value()
-        fixed_volt = self.UI.FixedGateBox.value()
-        try:
-            self.label_init(self.UI.GateLabel)
-            QApplication.processEvents()
-            self.gate = Gate(port, compliance)
-            self.gate.slowly_to_target(fixed_volt, voltage=True)
-            self.label_connected(self.UI.GateLabel)
-        except:
-            self.label_failed(self.UI.GateLabel)
-        QApplication.restoreOverrideCursor()
+        self.gate_connected = False
+        self.ginit = Initializer(self.UI)
+        self.function_in_thread(self.ginit, self.ginit.init_gate)
 
     def init_kmeter(self):
-        QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
-        port = self.UI.KMeterPortBox.currentText()
-        fwire = True if self.UI.WireCheckBox.isChecked() else False
-        source_volt = True if self.UI.SourceVoltsRadio.isChecked() else False
-        source_val = self.UI.SourceValBox.value()
-        speed = self.UI.SpeedBox.value()
-        try:
-            self.meter.close()
-            self.label_idle(self.UI.LMeterLabel)
-        except:
-            pass
-        try:
-            self.label_init(self.UI.KMeterLabel)
-            QApplication.processEvents()
-            self.meter = Meter(port, source_val, fwire, source_volt, speed)
-            self.label_connected(self.UI.KMeterLabel)
-        except:
-            self.label_failed(self.UI.KMeterLabel)
-        QApplication.restoreOverrideCursor()
+        self.meter_connected = False
+        self.minit = Initializer(self.UI)
+        self.function_in_thread(self.minit, self.minit.init_kmeter)
 
     def init_lmeter(self):
-        port = self.UI.LMeterPortBox.currentText()
-        try:
-            self.meter.close()
-            self.label_idle(self.UI.KMeterLabel)
-        except:
-            pass
-        try:
-            self.meter = Lockin(port)
-            self.label_connected(self.UI.LMeterLabel)
-        except:
-            self.label_failed(self.UI.LMeterLabel)
+        self.meter_connected = False
+        self.minit = Initializer(self.UI)
+        self.function_in_thread(self.minit, self.minit.init_lmeter)
 
 
     def start_sweep(self):
-        minvoltage = self.UI.MinSweepBox.value()
-        maxvoltage = self.UI.MaxSweepBox.value()
-        stepsize = self.UI.StepsizeBox.value()
-        waittime = self.UI.WaittimeBox.value()
-        wait_max = True if self.UI.MaxCheckbox.isChecked() else False
-        wait_max_time = self.UI.WaitmaxBox.value()
-        fwire = True if self.UI.WireCheckBox.isChecked() else False
-        # Check if file exists again, user could not have changed old one
-        self.init_save(self.savename)
-        savefile = self.savename
-        benny_hill = True if self.UI.BennyHillBox.isChecked() else False
-        if self.UI.SweepGateRadio.isChecked():
-            if fwire:
-                axes = ['GateV', 'Resistance', 'GateI']
-                self.init_graph(axes)
-                self.gs = Sweep(self.gate, self.meter, minvoltage, maxvoltage,
-                        stepsize, waittime, wait_max, wait_max_time, savefile,
-                        self.plot, self.plot_lower, 'GateV',
-                        'Resistance', 'GateI', benny_hill, False)
+        if self.gate_connected and self.meter_connected:
+            minvoltage = self.UI.MinSweepBox.value()
+            maxvoltage = self.UI.MaxSweepBox.value()
+            stepsize = self.UI.StepsizeBox.value()
+            waittime = self.UI.WaittimeBox.value()
+            wait_max = True if self.UI.MaxCheckbox.isChecked() else False
+            wait_max_time = self.UI.WaitmaxBox.value()
+            fwire = True if self.UI.WireCheckBox.isChecked() else False
+            # Check if file exists again, user could not have changed old one
+            self.init_save(self.savename)
+            savefile = self.savename
+            benny_hill = True if self.UI.BennyHillBox.isChecked() else False
+            # Get gate and Meter if available, otherwise stop
+            self.gate = self.ginit.get_gate()
+            self.meter = self.minit.get_meter()
+            if self.UI.SweepGateRadio.isChecked():
+                if fwire:
+                    axes = ['GateV', 'Resistance', 'GateI']
+                    self.init_graph(axes)
+                    self.gs = Sweep(self.gate, self.meter, minvoltage, maxvoltage,
+                            stepsize, waittime, wait_max, wait_max_time, savefile,
+                            self.plot, self.plot_lower, 'GateV',
+                            'Resistance', 'GateI', benny_hill, False)
+                else:
+                    # Then we Plot current on y axis
+                    axes = ['GateV', 'MeterI', 'GateI']
+                    self.init_graph(axes)
+                    self.gs = Sweep(self.gate, self.meter, minvoltage, maxvoltage,
+                            stepsize, waittime, wait_max, wait_max_time, savefile,
+                            self.plot, self.plot_lower, 'GateV',
+                            'MeterI', 'GateI', benny_hill, False)
+
             else:
-                # Then we Plot current on y axis
-                axes = ['GateV', 'MeterI', 'GateI']
+                # Then we sweep the meter, so change gate and meter
+                axes = ['MeterV', 'MeterI', 'GateI']
                 self.init_graph(axes)
                 self.gs = Sweep(self.gate, self.meter, minvoltage, maxvoltage,
-                        stepsize, waittime, wait_max, wait_max_time, savefile,
-                        self.plot, self.plot_lower, 'GateV',
-                        'MeterI', 'GateI', benny_hill, False)
+                    stepsize, waittime, wait_max, wait_max_time, savefile,
+                    self.plot, self.plot_lower, 'MeterV',
+                    'MeterI', 'GateI', benny_hill, True)
 
+            # Also connect abort button now
+            self.UI.StopSweepButton.released.connect(self.gs.stop)
+            self.start_in_thread(self.gs)
         else:
-            # Then we sweep the meter, so change gate and meter
-            axes = ['MeterV', 'MeterI', 'GateI']
-            self.init_graph(axes)
-            self.gs = Sweep(self.gate, self.meter, minvoltage, maxvoltage,
-                stepsize, waittime, wait_max, wait_max_time, savefile,
-                self.plot, self.plot_lower, 'MeterV',
-                'MeterI', 'GateI', benny_hill, True)
-
-        # Also connect abort button now
-        self.UI.StopSweepButton.released.connect(self.gs.stop)
-        self.start_in_thread(self.gs)
+            return
 
     def start_in_thread(self, target):
         self.thread = QtCore.QThread(self)
@@ -262,21 +235,35 @@ class MainWindow(QMainWindow):
         self.UI.SweepLabel.setStyleSheet('color: red')
         self.thread.start()
 
+    # def function_in_thread(self, functon):
+    def function_in_thread(self, target, function):
+        self.thread = QtCore.QThread(self)
+        target.gate_connected.connect(self.gate_connect_callback)
+        target.meter_connected.connect(self.meter_connect_callback)
+        target.moveToThread(self.thread)
+        self.thread.started.connect(function)
+        self.thread.start()
+
+
     def start_resmeas(self):
-        switching_steps = True if self.TimeSwitchCeckbox.isChecked() else False
-        waittime = self.UI.WaittimeBox.value()
-        gain_time = 60
-        meterI = 1E-5
-        axes = ['Time [s]', 'Resistance [Ohm]', 'Temperature [K]']
-        self.init_graph(axes)
-        # Check if file exists again, user could not have changed old one
-        self.init_save(self.savename)
-        savefile = self.savename
-        self.gs = ResLogger(self.meter, self.savename, self.plot, self.plot_lower,
-                switching_steps, waittime)
-        # Also connect abort button now
-        self.UI.StopResButton.released.connect(self.gs.stop)
-        self.start_in_thread(self.gs)
+        if self.meter_connected:
+            switching_steps = True if self.TimeSwitchCeckbox.isChecked() else False
+            waittime = self.UI.WaittimeBox.value()
+            gain_time = 60
+            meterI = 1E-5
+            axes = ['Time [s]', 'Resistance [Ohm]', 'Temperature [K]']
+            self.init_graph(axes)
+            # Check if file exists again, user could not have changed old one
+            self.init_save(self.savename)
+            savefile = self.savename
+            self.meter = self.minit.get_meter()
+            self.gs = ResLogger(self.meter, self.savename, self.plot, self.plot_lower,
+                    switching_steps, waittime)
+            # Also connect abort button now
+            self.UI.StopResButton.released.connect(self.gs.stop)
+            self.start_in_thread(self.gs)
+        else:
+            return
 
 
         # @QtCore.pyqtSlot()
@@ -334,6 +321,14 @@ class MainWindow(QMainWindow):
         self.UI.SweepLabel.setText('Idle')
         self.UI.SweepLabel.setStyleSheet('color: black')
 
+    def gate_connect_callback(self):
+        self.gate = self.ginit.get_gate()
+        self.gate_connected = True
+
+    def meter_connect_callback(self):
+        self.meter = self.minit.get_meter()
+        self.meter_connected = True
+
     def change_gate_voltage(self):
         gateval = self.UI.FixedGateBox.value()
         try:
@@ -346,6 +341,83 @@ class MainWindow(QMainWindow):
             except:
                 pass
             pass
+
+class Initializer(QtCore.QObject):
+    gate_connected = QtCore.pyqtSignal(bool)
+    meter_connected = QtCore.pyqtSignal(bool)
+    def __init__(self, UI):
+        QtCore.QObject.__init__(self)
+        self.UI = UI
+
+    def label_init(self, label):
+        label.setText('Initializing...')
+        label.setStyleSheet('color: blue')
+
+    def label_connected(self, label):
+        label.setText('Connected')
+        label.setStyleSheet('color: green')
+
+    def label_failed(self, label):
+        label.setText('Failed')
+        label.setStyleSheet('color: red')
+
+    def label_idle(self, label):
+        label.setText('Disconnected')
+        label.setStyleSheet('color: black')
+
+    def init_gate(self):
+        port = self.UI.GatePortBox.currentText()
+        compliance = self.UI.GateComplianceBox.value()
+        fixed_volt = self.UI.FixedGateBox.value()
+        try:
+            self.label_init(self.UI.GateLabel)
+            QApplication.processEvents()
+            self.gate = Gate(port, compliance)
+            self.gate.slowly_to_target(fixed_volt, voltage=True)
+            self.label_connected(self.UI.GateLabel)
+            self.gate_connected.emit(True)
+        except:
+            self.label_failed(self.UI.GateLabel)
+
+    def init_kmeter(self):
+        port = self.UI.KMeterPortBox.currentText()
+        fwire = True if self.UI.WireCheckBox.isChecked() else False
+        source_volt = True if self.UI.SourceVoltsRadio.isChecked() else False
+        source_val = self.UI.SourceValBox.value()
+        speed = self.UI.SpeedBox.value()
+        try:
+            self.meter.close()
+            self.label_idle(self.UI.LMeterLabel)
+        except:
+            pass
+        try:
+            self.label_init(self.UI.KMeterLabel)
+            QApplication.processEvents()
+            self.meter = Meter(port, source_val, fwire, source_volt, speed)
+            self.label_connected(self.UI.KMeterLabel)
+            self.meter_connected.emit(True)
+        except:
+            self.label_failed(self.UI.KMeterLabel)
+
+    def init_lmeter(self):
+        port = self.UI.LMeterPortBox.currentText()
+        try:
+            self.meter.close()
+            self.label_idle(self.UI.KMeterLabel)
+        except:
+            pass
+        try:
+            self.meter = Lockin(port)
+            self.label_connected(self.UI.LMeterLabel)
+            self.meter_connected.emit(True)
+        except:
+            self.label_failed(self.UI.LMeterLabel)
+
+    def get_gate(self):
+        return self.gate
+
+    def get_meter(self):
+        return self.meter
 
 class Sweep(QtCore.QObject):
     finished_sweep = QtCore.pyqtSignal(bool)
