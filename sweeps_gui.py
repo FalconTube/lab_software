@@ -553,7 +553,7 @@ class Sweep(QtCore.QObject):
         fig = plt.figure()
         ax = fig.add_subplot(211)
         ax1 = fig.add_subplot(212)
-        basename = os.path.basename(self.savename)
+        basename = os.path.basename(self.savename)[0]
         fig.suptitle(os.path.splitext(basename))
         ax.set_ylabel(y_uplabel)
         ax1.set_xlabel(xlabel)
@@ -605,7 +605,7 @@ class ResLogger(QtCore.QObject):
         fig = plt.figure()
         ax = fig.add_subplot(211)
         ax1 = fig.add_subplot(212)
-        basename = os.path.basename(self.savename)
+        basename = os.path.basename(self.savename)[0]
         fig.suptitle(os.path.splitext(basename))
         ax.set_ylabel(y_uplabel)
         ax1.set_xlabel(xlabel)
