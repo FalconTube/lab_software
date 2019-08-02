@@ -39,8 +39,9 @@ class PressureLogging:
                     )
 
     def measure(self):
-        self.curr_pressure = self.aml.read_value()
-        # self.curr_pressure = self.aml.convert_value(first)
+        first = self.aml.read_value()
+        first = str(first)
+        self.curr_pressure = self.aml.convert_value(first)
         self.init_vis_plot()
         while self.reading:
             self.curr_pressure = self.aml.read_value()

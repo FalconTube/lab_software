@@ -245,7 +245,7 @@ class GrapheneGrowth(QMainWindow):
         QApplication.processEvents()
         try:
             self.current_step = self.to_do[self.current_multicycle_num]
-            time.sleep(60)
+            time.sleep(300)
             if self.current_step == 'A':
                 self.use_anneal()
             else:

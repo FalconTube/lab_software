@@ -52,7 +52,7 @@ class Logger(Measurement):
                     reset_start = time.time()
             meterV = float(self.meter.read_voltage())
             # meterI = self.meter.read_current()
-            meterI = 1E-1 # ampere
+            meterI = 1E-5 # ampere
             temperature = self.lakeshore.read_temp()
             #resistance = meterV / meterI * four_point_fac           #with van der pauw geometrie
             resistance = meterV / meterI                             #without van der pauw geometrie

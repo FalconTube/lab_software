@@ -238,8 +238,8 @@ class MainWindow(QMainWindow):
     # def function_in_thread(self, functon):
     def function_in_thread(self, target, function):
         self.thread = QtCore.QThread(self)
-        target.gate_connected.connect(self.gate_connect_callback)
-        target.meter_connected.connect(self.meter_connect_callback)
+        target.gate_connected_sig.connect(self.gate_connect_callback)
+        target.meter_connected_sig.connect(self.meter_connect_callback)
         target.moveToThread(self.thread)
         self.thread.started.connect(function)
         self.thread.start()
@@ -280,6 +280,9 @@ class MainWindow(QMainWindow):
         self.init_kmeter()
         QApplication.processEvents()
         time.sleep(60)
+        while not self.meter_connected:
+            time.sleep(1)
+            QApplication.processEvents()
         self.start_sweep()
         QApplication.processEvents()
         self.current_multi_index += 1
@@ -326,6 +329,7 @@ class MainWindow(QMainWindow):
         self.gate_connected = True
 
     def meter_connect_callback(self):
+        print('Meter connected')
         self.meter = self.minit.get_meter()
         self.meter_connected = True
 
@@ -343,8 +347,8 @@ class MainWindow(QMainWindow):
             pass
 
 class Initializer(QtCore.QObject):
-    gate_connected = QtCore.pyqtSignal(bool)
-    meter_connected = QtCore.pyqtSignal(bool)
+    gate_connected_sig = QtCore.pyqtSignal(bool)
+    meter_connected_sig = QtCore.pyqtSignal(bool)
     def __init__(self, UI):
         QtCore.QObject.__init__(self)
         self.UI = UI
@@ -375,7 +379,7 @@ class Initializer(QtCore.QObject):
             self.gate = Gate(port, compliance)
             self.gate.slowly_to_target(fixed_volt, voltage=True)
             self.label_connected(self.UI.GateLabel)
-            self.gate_connected.emit(True)
+            self.gate_connected_sig.emit(True)
         except:
             self.label_failed(self.UI.GateLabel)
 
@@ -395,7 +399,7 @@ class Initializer(QtCore.QObject):
             QApplication.processEvents()
             self.meter = Meter(port, source_val, fwire, source_volt, speed)
             self.label_connected(self.UI.KMeterLabel)
-            self.meter_connected.emit(True)
+            self.meter_connected_sig.emit(True)
         except:
             self.label_failed(self.UI.KMeterLabel)
 
@@ -409,7 +413,7 @@ class Initializer(QtCore.QObject):
         try:
             self.meter = Lockin(port)
             self.label_connected(self.UI.LMeterLabel)
-            self.meter_connected.emit(True)
+            self.meter_connected_sig.emit(True)
         except:
             self.label_failed(self.UI.LMeterLabel)
 
