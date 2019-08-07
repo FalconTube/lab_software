@@ -4,6 +4,7 @@ from Classes.caching_system import CachingSystem
 import time
 import numpy as np
 import sys
+import getpass
 
 
 class UseKorad(KoradSerial, Measurement):
@@ -14,6 +15,7 @@ class UseKorad(KoradSerial, Measurement):
             self.channel = self.korad.channels[0]
             self.korad.output.off()
             self.channel.current = 0.0
+            self.ask_ssh_notify()
             if self.ask_voltage():
                 setvoltage = float(
                     self._cache.cache_input("Set new voltage value [default = 17]: ",
@@ -21,8 +23,8 @@ class UseKorad(KoradSerial, Measurement):
                 self.channel.voltage = setvoltage
             else:
                 pass
+
             self.korad.output.on()
-            # print('Would put output on now.')
         except ValueError:
             print('Cannot turn on the Korad. Exiting... ')
             sys.exit()
@@ -38,6 +40,20 @@ class UseKorad(KoradSerial, Measurement):
         else:
             print('Please input a valid choice. Exiting...')
             sys.exit()
+
+    def ask_ssh_notify(self):
+        choice = str(self._cache.cache_input(
+            "Do you want to get notified via ssh?: (y/n)", 'y'))
+        choice = choice.lower()
+        if choice == 'y':
+            self.ssh_password = getpass.getpass()
+            self.do_notify = True
+        if choice == 'n':
+            self.do_notify = False
+        else:
+            print('Please input a valid choice. Exiting...')
+            sys.exit()
+
 
     def define_range(self):
         start = float(self._cache.cache_input(
@@ -96,6 +112,8 @@ class UseKorad(KoradSerial, Measurement):
         self.channel.current = 0.0
         self.korad.output.off()
         self.korad.close()
+        if self.do_notify:
+            self.notify_finished_ssh()
         sys.exit()
 
     def set_constant_values(self):
@@ -118,6 +136,24 @@ class UseKorad(KoradSerial, Measurement):
             print('Waiting for {} Min\n from this time on: {}'
                   .format(j/60, time.ctime()))
             time.sleep(j)
+
+    def notify_finished_ssh(self):
+        ''' Connect to yannics PC via ssh and make popup'''
+        host = '134.95.66.248'
+        user = 'yannic'
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((host, 22))
+
+        session = Session()
+        session.handshake(sock)
+        session.userauth_password(user, self.ssh_password)
+
+        channel = session.open_session()
+        now = datetime.datetime.now().time()
+        channel.execute('export DISPLAY=:0; notify-send -t 100000 "Heating Finished" "Finished at time: {}"'.format(now))
+        channel.close()
+
 
 
 if __name__ == "__main__":
