@@ -485,7 +485,8 @@ class Sweep(QtCore.QObject):
             time.sleep(self.waittime)
             meterV = self.meter.read_voltage()
             meterI = self.meter.read_current()
-            temp = self.lakeshore.read_temp()
+            # temp = self.lakeshore.read_temp()
+            temp = 300#self.lakeshore.read_temp()
             gatecurrent = self.gate.read_current()
 
             self.x.append(self.sweepvoltage)
@@ -721,7 +722,8 @@ class ResLogger(QtCore.QObject):
                     reset_start = time.time()
             meterV = float(self.meter.read_voltage())
             meterI = self.meter.read_current()
-            temperature = self.lakeshore.read_temp()
+            # temperature = self.lakeshore.read_temp()
+            temperature = 300 #self.lakeshore.read_temp()
             resistance = meterV / meterI                             #without van der pauw geometrie
 
             self.temps.append(temperature)
@@ -733,11 +735,11 @@ class ResLogger(QtCore.QObject):
             self.savefile.write(
                 "{}, {}, {}, {}, {} \n".format(time_elapsed, meterV, resistance, meterI, temperature)
             )
-            print(
-                    "Time: {:.1f}, Voltage: {}, R: {}, Curr: {}, Temp: {}".format(
-                    time_elapsed, meterV, resistance, meterI, temperature
-                )
-            )
+            # print(
+                    # "Time: {:.3f}, Voltage: {}, R: {}, Curr: {}, Temp: {}".format(
+                    # time_elapsed, meterV, resistance, meterI, temperature
+                # )
+            # )
             if self.switching_steps:
                 metermode = self.meter.get_mode()
                 is_voltmode = False if (metermode=='CURR') else True
