@@ -5,6 +5,9 @@ import time
 import numpy as np
 import sys
 import getpass
+import socket
+from ssh2.session import Session
+import datetime
 
 
 class UseKorad(KoradSerial, Measurement):
@@ -48,8 +51,10 @@ class UseKorad(KoradSerial, Measurement):
         if choice == 'y':
             self.ssh_password = getpass.getpass()
             self.do_notify = True
+            return
         if choice == 'n':
             self.do_notify = False
+            return
         else:
             print('Please input a valid choice. Exiting...')
             sys.exit()

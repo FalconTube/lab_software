@@ -151,7 +151,9 @@ class Meter(Keithley):
 
         if not self.set_source_voltage:
             max_curr = 1
-            range_val = 5*self.source_val if 5*self.source_val < max_curr else max_curr
+            # range_val = 5*self.source_val if 5*self.source_val < max_curr else max_curr
+            range_val = 1E-5
+            range_val_volt = 0.21
             #range_val = 50*self.source_val if 50*self.source_val < 200 else 200
             meter_setup = [
                 '*RST',
@@ -160,6 +162,9 @@ class Meter(Keithley):
                 ':SOUR:FUNC CURR',  # Set current mode
                 ':SOUR:CURR:MODE FIX',
                 ':SOUR:CURR:RANG {}'.format(range_val),  # Set acceptable current range to 100uA
+                ':SOUR:VOLT:RANG {}'.format(range_val_volt),  # Set acceptable current range to 100uA
+                ':DISP:DIG 7',  # Set acceptable current range to 100uA
+
                 # ':SOUR:CURR:RANG 0.200',  # Set acceptable current range to 100uA
                 ':SENS:FUNC "VOLT"',  # Set-up voltage measurement
                 ':SENS:VOLT:PROT 120.0',  # Set voltage compliance
