@@ -326,6 +326,7 @@ class Lockin():
         print('Initialized Lockin on GPIB::{}'.format(gpib_number))
         # self.lockin.write("")
         self.lockin.write('OUTX 1')  # Sets device to talk over GPIB
+        self.manual_current = 1E-6
         self.tauset = {
             0: "10mus",
             1: "30mus",
@@ -467,7 +468,11 @@ class Lockin():
         self.lockin.close()
 
     def read_current(self):
-        return 1E-6
+        return self.manual_current
+
+    def set_current(self, value):
+        self.manual_current = value
+
 
 
 class FUG():
