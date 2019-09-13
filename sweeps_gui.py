@@ -405,6 +405,7 @@ class Initializer(QtCore.QObject):
 
     def init_lmeter(self):
         port = self.UI.LMeterPortBox.currentText()
+        current = float(self.UI.LockinCurrentBox.text().strip())
         try:
             self.meter.close()
             self.label_idle(self.UI.KMeterLabel)
@@ -412,6 +413,7 @@ class Initializer(QtCore.QObject):
             pass
         try:
             self.meter = Lockin(port)
+            self.meter.set_current(current)
             self.label_connected(self.UI.LMeterLabel)
             self.meter_connected_sig.emit(True)
         except:
