@@ -42,7 +42,7 @@ class Keithley():
 
     def read_voltage(self):
         self.read_values()
-        return self.voltage
+        return self.voltage, 0
 
     def read_source_voltage(self):
         voltage = float(self.keithley.ask('SOUR:VOLT:LEV?').strip())
@@ -453,9 +453,16 @@ class Lockin():
     def set_chann_one_display(self, inputstring):
         self.lockin.ask('DDEF1,0,0')
 
+    # def read_voltage(self):
+        # return float(self.lockin.ask('OUTR? 1'))
+
     def read_voltage(self):
-        return float(self.lockin.ask('OUTR? 1'))
-    
+        values_string = self.lockin.ask('SNAP? 3,4')
+        values = values_string.split(',')
+        R = float(values[0])
+        theta = float(values[1])
+        return R, theta
+
     def auto_gain(self):
         self.lockin.write('AGAN')
 

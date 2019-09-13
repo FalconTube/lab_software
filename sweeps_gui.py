@@ -465,7 +465,7 @@ class Sweep(QtCore.QObject):
         self.lakeshore = Lakeshore()
         savestring = \
                 '# Gatevoltage[V], Temp[K], Metervoltage[V], Metercurrent[A],'+\
-                ' R[Ohm], Gatecurrent[A]'
+                ' R[Ohm], Gatecurrent[A], Theta[deg]'
         self.create_savefile(savestring)
         self.init_ramp_parameters()
 
@@ -483,7 +483,7 @@ class Sweep(QtCore.QObject):
             else:
                 self.meter.set_voltage(self.sweepvoltage)
             time.sleep(self.waittime)
-            meterV = self.meter.read_voltage()
+            meterV, theta = self.meter.read_voltage()
             meterI = self.meter.read_current()
             # temp = self.lakeshore.read_temp()
             temp = 300#self.lakeshore.read_temp()
@@ -494,6 +494,7 @@ class Sweep(QtCore.QObject):
             self.r.append(meterV/meterI)
             self.mI.append(meterI)
             self.gc.append(gatecurrent)
+            self.theta_vals.append(theta)
 
             # Write values to file
             writedict = {
@@ -503,6 +504,7 @@ class Sweep(QtCore.QObject):
                     'I': meterI,
                     'R': meterV/meterI,
                     'I_gate': gatecurrent,
+                    'Theta' : theta,
                     }
             for i in writedict:
                 self.savefile.write('{} , '.format(str(writedict[i]).strip()))
@@ -528,12 +530,14 @@ class Sweep(QtCore.QObject):
         self.r = []
         self.mI = []
         self.gc = []
+        self.theta_vals = []
         self.plotdict = {
                 'GateV' : self.x,
                 'MeterV' : self.y,
                 'Resistance' : self.r,
                 'MeterI': self.mI,
                 'GateI' : self.gc,
+                'Theta' : self.theta_vals,
                 }
 
 
@@ -708,6 +712,7 @@ class ResLogger(QtCore.QObject):
         self.t = []
         self.v = []
         self.temps = []
+        self.theta_vals = []
         start_time = time.time()
         #four_point_fac = np.pi * 2 / ln(2)
         reset_start = time.time()
@@ -720,7 +725,7 @@ class ResLogger(QtCore.QObject):
                     self.meter.auto_gain()
                     time.sleep(10)
                     reset_start = time.time()
-            meterV = float(self.meter.read_voltage())
+            meterV, theta = self.meter.read_voltage()
             meterI = self.meter.read_current()
             # temperature = self.lakeshore.read_temp()
             temperature = 300 #self.lakeshore.read_temp()
@@ -730,10 +735,11 @@ class ResLogger(QtCore.QObject):
             self.t.append(time_elapsed)
             self.r.append(resistance)
             self.v.append(meterV)
+            self.theta_vals.append(theta)
             # Plot values in real time
             self.new_data_available.emit(True)
             self.savefile.write(
-                "{}, {}, {}, {}, {} \n".format(time_elapsed, meterV, resistance, meterI, temperature)
+                "{}, {}, {}, {}, {}, {} \n".format(time_elapsed, meterV, resistance, meterI, temperature, theta)
             )
             # print(
                     # "Time: {:.3f}, Voltage: {}, R: {}, Curr: {}, Temp: {}".format(
