@@ -142,7 +142,8 @@ class MainWindow(QMainWindow):
         self.UI.StartResButton.released.connect(self.start_resmeas)
         self.UI.AutoGainButton.released.connect(self.set_autogain_time)
         self.UI.FixedGateBox.valueChanged.connect(self.change_gate_voltage)
-        self.UI.StartMultiSourceButton.released.connect(self.start_multi_sweep)
+        self.UI.StartMultiSourceButton.released.connect(self.start_multi_source_sweep)
+        self.UI.StartMultiGateButton.released.connect(self.start_multi_gate_sweep)
 
     def label_init(self, label):
         label.setText('Initializing...')
@@ -275,7 +276,10 @@ class MainWindow(QMainWindow):
             pass
 
     def start_multi(self):
-        self.UI.SourceValBox.setValue(self.current_multi_val)
+        if self.multi_source_mode:
+            self.UI.SourceValBox.setValue(self.current_multi_val)
+        else:
+            self.UI.FixedGateBox.setValue(self.current_multi_val)
         QApplication.processEvents()
         self.init_kmeter()
         QApplication.processEvents()
@@ -287,8 +291,8 @@ class MainWindow(QMainWindow):
         QApplication.processEvents()
         self.current_multi_index += 1
 
-    def start_multi_sweep(self):
-        instring = self.UI.MultiSourceLine.text().strip()
+    def get_multi_vals(self, instring):
+        ''' Sets the self.multi_vals list for further processing '''
         try:
             string_vals = instring.split(',')
             self.multi_vals = [float(i) for i in string_vals]
@@ -297,7 +301,12 @@ class MainWindow(QMainWindow):
             print('Could not convert Line to floats. Did you do a Typo?')
 
 
-        start_question = "I will do Measurements with the following values:\n"\
+    def start_multi_gate_sweep(self):
+        instring = self.UI.MultiGateLine.text().strip()
+
+        self.get_multi_vals(instring)
+
+        start_question = "I will set <b>GATE</b> to the following values:\n"\
                 + "{}.\n".format(self.multi_vals)\
                 + "Is this what you wanted?"
         if (
@@ -310,6 +319,31 @@ class MainWindow(QMainWindow):
             ):
             self.current_multi_index = 0
             self.current_multi_val = self.multi_vals[0]
+
+            self.multi_source_mode = False
+
+            self.start_multi()
+
+    def start_multi_source_sweep(self):
+        instring = self.UI.MultiSourceLine.text().strip()
+
+        self.get_multi_vals(instring)
+
+        start_question = "I will set <b>SOURCE</b> to the following values:\n"\
+                + "{}.\n".format(self.multi_vals)\
+                + "Is this what you wanted?"
+        if (
+            QMessageBox.Yes == QMessageBox(
+                QMessageBox.Information,
+                "Confirm Measurement",
+                start_question,
+                QMessageBox.Yes | QMessageBox.No,
+            ).exec()
+            ):
+            self.current_multi_index = 0
+            self.current_multi_val = self.multi_vals[0]
+
+            self.multi_source_mode = True
 
             self.start_multi()
 
