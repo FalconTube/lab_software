@@ -140,9 +140,9 @@ class GrapheneGrowth(QMainWindow):
 
         self.init_controllers()
         if self.controllers_ready:
-            self.experiment = GrowCycle(target=heatval, duration=duration,
+            self.experiment = GrowCycle(target=self.UI.GrowthTargetBox, duration=duration,
                     sleep_time=0.2, crystal=crystal, FUG=self.Fug, Korad=self.Korad)
-            self.start_in_thread(grow_callback, 'Growing!')
+            self.start_in_thread(self.grow_callback, 'Growing!')
 
     def grow_callback(self):
         self.UI.StatusLabel.setText('Finished Grow')
@@ -163,7 +163,7 @@ class GrapheneGrowth(QMainWindow):
                 QApplication.restoreOverrideCursor()
                 return
         # Now do the annealing
-        target = self.UI.AnnealValueBox.value()
+        target = self.UI.AnnealValueBox
         duration = self.UI.AnnealTimeBox.value() # in min
         duration *= 60
         self.init_controllers()
@@ -181,7 +181,7 @@ class GrapheneGrowth(QMainWindow):
         self.UI.StatusLabel.setStyleSheet('color: black')
 
     def use_flash(self):
-        target = self.UI.FlashValueBox.value()
+        target = self.UI.FlashValueBox
         duration = self.UI.FlashTimeBox.value() # in SEC
         self.init_controllers()
         if self.controllers_ready:
@@ -259,13 +259,21 @@ class GrapheneGrowth(QMainWindow):
 class Heating(QtCore.QObject):
     experiment_finished = QtCore.pyqtSignal(bool)
     new_data_available = QtCore.pyqtSignal(bool)
-    def __init__(self, target, hold_time, sleep_time=0.3, FUG=None, Korad=None):
+    def __init__(self, target_loc, hold_time, sleep_time=0.3, FUG=None, Korad=None):
         QtCore.QObject.__init__(self)
-        self.target = target
+        self.target_loc = target_loc
+        self.target = 0.0 #Init once for failsafe
+        self.get_target() #Get acutal target value
         self.duration = hold_time
         self.sleep_time = sleep_time
         self.FUG = FUG
         self.korad = Korad
+    
+    def get_target(self):
+        try:
+            self.target = self.target_loc.value()
+        except:
+            print('COULD NOT READ TARGET')
 
     def close_controllers(self):
         self.korad.set_current(0.0)
@@ -322,6 +330,7 @@ class Heating(QtCore.QObject):
         self.korad.set_voltage(18)
         self.korad.set_current(2.2)
         while passed < self.duration:
+            self.get_target()
             self.changed_korad = False
             passed = time.time() - start
             emission = self.FUG.read_emission()
